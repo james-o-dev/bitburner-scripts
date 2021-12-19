@@ -146,7 +146,7 @@ const hackTarget = (ns, target, config, queue) => {
 		timestampFinish,
 		value: target.value,
 		// pollf: ns.tFormat(poll),
-		timestampFinishf: getTimestamp(timestampFinish, poll, true),
+		timestampFinishf: getTimestamp(timestampFinish, undefined, true),
 		message,
 	}
 }
