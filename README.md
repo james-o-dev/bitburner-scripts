@@ -17,8 +17,7 @@ Initializes by first getting all the server info and writing it to a JSON text f
   * Run `init.js --clean` to remove existing files from all servers and kill all running scripts.
   * Add/remove your available tools to the `tools` string array
 * Run `nuker.js` to explot and nuke any un-nuked servers
-* Run the controller function to do the main hacking.
-  * Currently `controller-v4.js`
+* Run the `controller.js` function to do the main hacking.
   * Writes to the script log but also writes to `log.txt`
 * Run `killall.js` to kill all running scripts in all servers and home
   * Run `cleanup-kill.js` to the same as above, in addition to also removing all files.

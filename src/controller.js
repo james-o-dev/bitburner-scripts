@@ -1,10 +1,4 @@
-const threshMoney = 0.75 // Should not hack if below this % of max money
-const threshSecurity = 5 // Should weaken until it is at most these levels above security
 const configFileName = 'config.txt'
-const logFileName = 'logs.txt'
-const homeReserved = 7.5 // Harcoded, use `mem init.js`
-const homeMaxRam = 512 - homeReserved // Hardcoded, use `free`
-const weakenAnalyzeOneThread = 0.05 // How much one thread weakens.
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -12,24 +6,12 @@ export async function main(ns) {
 
 	const config = JSON.parse(await ns.read(configFileName))
 
-	ns.rm(logFileName)
-	await ns.write(logFileName, '', 'a')
+	const logFileName = config.meta.logFileName
 
-	const usableServers = config.servers.filter(s => s.hasRootAccess)
+	await ns.write(logFileName, '', 'w')
+
 	const targets = config.servers
-		.filter(s => s.hasRootAccess && !s.own && s.hackAnalyzeChance > 0)
-		.map(s => {
-			// Based on max-money times changes, divided by minimum security.
-			// const simpleValue = (s.maxMoney * s.hackAnalyzeChance) / s.minSecurity
-			// s.value = simpleValue
-
-			// Take into account the time it takes for operations.
-			const timeValue = (s.maxMoney * s.hackAnalyzeChance) / (s.hackTime + s.weakenTime + s.growTime)
-			s.value = timeValue
-
-			return s
-		})
-		.filter(s => s.value)
+		.filter(s => s.hasRootAccess && !s.own && s.hackAnalyzeChance > 0 && s.value)
 		.sort((a, b) => b.value - a.value)
 
 	let poll = 0
@@ -40,7 +22,7 @@ export async function main(ns) {
 
 		let returned = []
 		for (let target of targets) {
-			const targetReturn = hackTarget(ns, target, usableServers, config.scripts)
+			const targetReturn = hackTarget(ns, target, config)
 			if (!targetReturn.threadsUsed) break
 			returned.push(targetReturn)
 		}
@@ -54,7 +36,7 @@ export async function main(ns) {
 		if (polls.length > 10) polls.splice(9, 99999999)
 
 		// Strings for logging.
-		const logged = JSON.stringify(returned, null, 4)
+		const logged = stringify(returned)
 		const dateTime = `UPDATED ${new Date().toLocaleString()}`
 		const nextPoll = `NEXT UPDATE IN ${ns.tFormat(poll)}`
 		const logDiv = '===================================='
@@ -77,10 +59,21 @@ export async function main(ns) {
 }
 
 /** @param {NS} ns **/
-const hackTarget = (ns, target, usableServers, scripts) => {
+const hackTarget = (ns, target, config) => {
+	// From config.
+	const scripts = config.scripts
+	const usableServers = config.servers.filter(s => s.hasRootAccess)
+	const homeMaxRam = config.meta.homeMaxRam - config.meta.homeReserved
+	const threshMoney = config.meta.threshMoney
+	const threshSecurity = config.meta.threshSecurity
+	const weakenAnalyzeOneThread = config.meta.weakenAnalyzeOneThread
+
+	// From target.
 	const serverMoneyAvailable = ns.getServerMoneyAvailable(target.name)
 	const serverSecurityLevel = ns.getServerSecurityLevel(target.name)
 	const minMoneyToHack = target.maxMoney * threshMoney
+
+	// Variables.
 	let script
 	let threadsRequired = 0
 	let threadsUsed = 0
@@ -129,7 +122,6 @@ const hackTarget = (ns, target, usableServers, scripts) => {
 		const availRam = server.ram - ns.getServerUsedRam(server.name)
 		let threads = Math.floor(availRam / scriptRam)
 		if (threadsRequired - threadsUsed < threads) threads = threadsRequired - threadsUsed
-
 		if (threads) {
 			ns.exec(script, server.name, threads, target.name)
 			threadsUsed += threads
@@ -149,3 +141,5 @@ const hackTarget = (ns, target, usableServers, scripts) => {
 
 /** @param {NS} ns **/
 const nFormat = (ns, number) => ns.nFormat(number, '0,0')
+
+const stringify = (obj) => JSON.stringify(obj, null, 2)

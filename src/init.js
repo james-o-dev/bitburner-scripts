@@ -1,6 +1,13 @@
+// Settings
 const scriptNames = ['grow.js', 'weaken.js', 'hack.js']
 const tools = ['BruteSSH.exe', 'FTPCrack.exe']
-const fileName = 'config.txt'
+const threshMoney = 0.75 // Should not hack if below this % of max money
+const threshSecurity = 5 // Should weaken until it is at most these levels above security
+const configFileName = 'config.txt'
+const logFileName = 'logs.txt'
+const homeReserved = 2.1 // Harcoded, use `mem init.js`
+const weakenAnalyzeOneThread = 0.05 // How much one thread weakens.
+
 const flagNames = [
 	['deploy', false],
 	['clean', false],
@@ -28,14 +35,21 @@ export async function main(ns) {
 		meta: {
 			count: servers.length,
 			totalRam,
-			totalMinThreads: Math.floor(totalRam / scriptMostRam)
+			totalMinThreads: Math.floor(totalRam / scriptMostRam),
+			homeMaxRam: ns.getServerMaxRam('home'),
+			threshMoney,
+			threshSecurity,
+			configFileName,
+			logFileName,
+			homeReserved,
+			weakenAnalyzeOneThread,
 		},
 		scripts,
 		tools,
 		servers,
 	}
 
-	await ns.write(fileName, JSON.stringify(config, null, 2), 'w')
+	await ns.write(configFileName, JSON.stringify(config, null, 2), 'w')
 
 	if (flags.clean) {
 		ns.run('cleanup-kill.js')
@@ -70,19 +84,36 @@ const getServerInfo = (ns, server, parent) => {
 	const reqHacking = ns.getServerRequiredHackingLevel(server)
 	const reqPorts = ns.getServerNumPortsRequired(server)
 
+	const hackTime = ns.getHackTime(server)
+	const weakenTime = ns.getWeakenTime(server)
+	const growTime = ns.getGrowTime(server)
+
+	const maxMoney = ns.getServerMaxMoney(server)
+	const minSecurity = ns.getServerMinSecurityLevel(server)
+	const hackAnalyzeChance = ns.hackAnalyzeChance(server)
+
+	let value
+
+	// Simple: Based on max-money times changes, divided by minimum security.
+	// value = (s.maxMoney * s.hackAnalyzeChance) / s.minSecurity
+
+	// Time-based: Take into account the time it takes for operations.
+	value = (maxMoney * hackAnalyzeChance) / (hackTime + weakenTime + growTime)
+
 	return {
 		name: server,
 		ram: ns.getServerMaxRam(server),
 		own: ns.getPurchasedServers().includes(server),
-		maxMoney: ns.getServerMaxMoney(server),
-		minSecurity: ns.getServerMinSecurityLevel(server),
+		maxMoney,
+		minSecurity,
 		canHack: reqHacking <= ns.getHackingLevel() && reqPorts <= tools.length,
+		hackAnalyzeChance,
 		hasRootAccess: ns.hasRootAccess(server),
 		ls: ns.ls(server),
-		hackTime: ns.getHackTime(server),
-		weakenTime: ns.getWeakenTime(server),
-		growTime: ns.getGrowTime(server),
-		hackAnalyzeChance: ns.hackAnalyzeChance(server),
+		hackTime,
+		weakenTime,
+		growTime,
+		value,
 		parent,
 		children,
 	}
