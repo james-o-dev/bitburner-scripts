@@ -3,7 +3,8 @@ const threshSecurity = 5 // Should weaken until it is at most these levels above
 const configFileName = 'config.txt'
 const logFileName = 'logs.txt'
 const homeReserved = 7.5 // Harcoded, use `mem init.js`
-const homeMaxRam = 256 - homeReserved // Hardcoded, use `free`
+const homeMaxRam = 512 - homeReserved // Hardcoded, use `free`
+const weakenAnalyzeOneThread = 0.05 // How much one thread weakens.
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -54,18 +55,21 @@ export async function main(ns) {
 
 		// Strings for logging.
 		const logged = JSON.stringify(returned, null, 4)
+		const dateTime = `UPDATED ${new Date().toLocaleString()}`
 		const nextPoll = `NEXT UPDATE IN ${ns.tFormat(poll)}`
 		const logDiv = '===================================='
 
 		// Write to log file.
 		await ns.write(logFileName, logged, 'a')
 		await ns.write(logFileName, `\n${pollsLog}`, 'a')
+		await ns.write(logFileName, `\n${dateTime}`, 'a')
 		await ns.write(logFileName, `\n${nextPoll}`, 'a')
 		await ns.write(logFileName, `\n${logDiv}`, 'a')
 
 		// Write to log.
 		ns.print(logged)
 		ns.print(pollsLog)
+		ns.print(dateTime)
 		ns.print(nextPoll)
 		ns.print(`APPENDED LOGS TO ${logFileName}`)
 		ns.print(logDiv)
@@ -87,9 +91,8 @@ const hackTarget = (ns, target, usableServers, scripts) => {
 	if (serverSecurityLevel > target.minSecurity + threshSecurity) {
 		script = 'weaken.js'
 		poll = target.weakenTime
-		// const weakenToThresh = serverSecurityLevel - target.minSecurity
-		// threadsRequired = weakenAnalyzeRecursive(ns, weakenToThresh, 0, 9999, 0)
-		threadsRequired = (serverSecurityLevel - target.minSecurity) * 10 // TODO: TEMP, until I figure out `ns.weakenAnalyze()`
+		threadsRequired = (serverSecurityLevel - target.minSecurity) / weakenAnalyzeOneThread
+
 		message = 'weaken by ' + nFormat(ns, serverSecurityLevel - target.minSecurity)
 	}
 	// Else if below certain money - grow
@@ -141,39 +144,6 @@ const hackTarget = (ns, target, usableServers, scripts) => {
 		pollf: ns.tFormat(poll),
 		script,
 		message,
-	}
-}
-
-/** @param {NS} ns **/
-const weakenAnalyzeRecursive = (ns, target, start, end, count) => {
-	const limit = 50
-
-	let half = end - start
-	const startAnalyze = Math.abs(ns.weakenAnalyze(start))
-	const halfAnalyze = Math.abs(ns.weakenAnalyze(half))
-	const endAnalyze = Math.abs(ns.weakenAnalyze(end))
-
-	ns.print(`target ${target}`)
-	ns.print(`startAnalyze ${startAnalyze}`)
-	ns.print(`halfAnalyze ${halfAnalyze}`)
-	ns.print(`endAnalyze ${endAnalyze}`)
-	ns.print(`count ${count}`)
-
-	// ns.print('weakenRecursive count: ' + count)
-	// ns.print('weakenRecursive halfAnalyze: ' + halfAnalyze)
-	// ns.print('weakenRecursive target: ' + target)
-
-	if (count > limit) {
-		return Math.abs(target - startAnalyze) > Math.abs(endAnalyze - target) ? end : start
-	}
-	if (target === halfAnalyze) return half
-
-	count++
-
-	if (halfAnalyze > target) {
-		return weakenAnalyzeRecursive(ns, target, half, end, count)
-	} else {
-		return weakenAnalyzeRecursive(ns, target, start, half, count)
 	}
 }
 
