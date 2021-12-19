@@ -46,11 +46,11 @@ export async function main(ns) {
 
 		// Keep a record of polls,
 		// In case none were returned, we wait for a longer running script.
-		polls = [...polls, ...returned.map(tr => tr.poll)].sort((a, b) => a - b)
+		polls = [...new Set([...polls, ...returned.map(tr => tr.poll)])].sort((a, b) => a - b)
 		const pollsLog = `polls = ${polls.join(', ')}`
 		poll = polls.shift()
 		// Trim polls if there are too many.
-		if (polls.length > 10) polls.slice(9, polls.length - 1)
+		if (polls.length > 10) polls.splice(9, 99999999)
 
 		// Strings for logging.
 		const logged = JSON.stringify(returned, null, 4)
@@ -89,7 +89,7 @@ const hackTarget = (ns, target, usableServers, scripts) => {
 		poll = target.weakenTime
 		// const weakenToThresh = serverSecurityLevel - target.minSecurity
 		// threadsRequired = weakenAnalyzeRecursive(ns, weakenToThresh, 0, 9999, 0)
-		threadsRequired = serverSecurityLevel - target.minSecurity // TODO: TEMP, until I figure out `ns.weakenAnalyze()`
+		threadsRequired = (serverSecurityLevel - target.minSecurity) * 10 // TODO: TEMP, until I figure out `ns.weakenAnalyze()`
 		message = 'weaken by ' + nFormat(ns, serverSecurityLevel - target.minSecurity)
 	}
 	// Else if below certain money - grow
