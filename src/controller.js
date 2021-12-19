@@ -26,14 +26,14 @@ export async function main(ns) {
 		for (let target of targets) {
 			const targetReturn = hackTarget(ns, target, config, running)
 			if (targetReturn.threadsUsed) {
-        returned.push(targetReturn)
-      }
+				returned.push(targetReturn)
+			}
 		}
 
 		// Get next timestamp.
 		running = [...running, ...returned].sort((a, b) => a.timestampFinish - b.timestampFinish)
 		// Get next poll from next timestamp.
-		poll = running[0].timestampFinish - startTimestamp + 2000
+		poll = running.shift().timestampFinish - startTimestamp + 2000
 
 		// Write to log.
 		ns.clearLog()
@@ -99,29 +99,29 @@ const hackTarget = (ns, target, config, running) => {
 
 	// Add on already used threads of this script for this target.
 	const alreadyRunningThreads = running.filter(r => r.target === target.name && r.script === script).reduce((t, ar) => t + ar.threadsUsed, 0)
-  threadsRequired -= alreadyRunningThreads
+	threadsRequired -= alreadyRunningThreads
 
-  if (threadsRequired > 0) {
-    // Use home.
-    const homeAvailRam = homeMaxRam - ns.getServerUsedRam('home')
-    threads = Math.floor(homeAvailRam / scriptRam)
-    if (threadsRequired - threadsUsed < threads) threads = threadsRequired - threadsUsed
-    if (threads > 0) {
-      ns.exec(script, 'home', threads, target.name)
-      threadsUsed += threads
-    }
+	if (threadsRequired > 0) {
+		// Use home.
+		const homeAvailRam = homeMaxRam - ns.getServerUsedRam('home')
+		threads = Math.floor(homeAvailRam / scriptRam)
+		if (threadsRequired - threadsUsed < threads) threads = threadsRequired - threadsUsed
+		if (threads > 0) {
+			ns.exec(script, 'home', threads, target.name)
+			threadsUsed += threads
+		}
 
-    // Use other servers.
-    for (let server of usableServers) {
-      const availRam = server.ram - ns.getServerUsedRam(server.name)
-      threads = Math.floor(availRam / scriptRam)
-      if (threadsRequired - threadsUsed < threads) threads = threadsRequired - threadsUsed
-      if (threads > 0) {
-        ns.exec(script, server.name, threads, target.name)
-        threadsUsed += threads
-      }
-    }
-  }
+		// Use other servers.
+		for (let server of usableServers) {
+			const availRam = server.ram - ns.getServerUsedRam(server.name)
+			threads = Math.floor(availRam / scriptRam)
+			if (threadsRequired - threadsUsed < threads) threads = threadsRequired - threadsUsed
+			if (threads > 0) {
+				ns.exec(script, server.name, threads, target.name)
+				threadsUsed += threads
+			}
+		}
+	}
 
 	const timestampFinish = getTimestamp(undefined, poll)
 	return {
@@ -129,10 +129,10 @@ const hackTarget = (ns, target, config, running) => {
 		script,
 		threadsRequired,
 		threadsUsed,
-		poll,
+		// poll,
 		timestampFinish,
-    value: target.value,
-		pollf: ns.tFormat(poll),
+		value: target.value,
+		// pollf: ns.tFormat(poll),
 		timestampFinishf: getTimestamp(timestampFinish, poll, true),
 		message,
 	}
