@@ -17,35 +17,23 @@ export async function main(ns) {
 	let poll = 0
 	let polls = []
 	let startTimestamp
-	let vipTimestamp
 
 	while (true) {
 		await ns.sleep(poll)
 
 		startTimestamp = new Date().getTime()
 
-		// The most valuable target was finished while asleep -
-		// Kill other supporting running scripts to free threads.
-		if (vipTimestamp < startTimestamp) {
-			config.servers.forEach(s => ns.killall(s.name))
-			// Reset the VIP timer.
-			vipTimestamp = 0
-		}
-
 		let returned = []
 		for (let target of targets) {
 			const targetReturn = hackTarget(ns, target, config)
 			if (!targetReturn.threadsUsed) break
 			returned.push(targetReturn)
-
-			// Only use the first poll, since the first target is the most valuable.
-			if (!vipTimestamp) vipTimestamp = startTimestamp + targetReturn.poll
 		}
 
 		// Keep a record of polls,
 		// In case none were returned, we wait for a longer running script.
 		polls = [...new Set([...polls, ...returned.map(tr => tr.poll)])].sort((a, b) => a - b)
-		// const pollsLog = `polls = ${polls.join(', ')}`
+		const pollsLog = `polls = ${polls.join(', ')}`
 		poll = polls.shift()
 		// Trim polls if there are too many.
 		if (polls.length > 10) polls.splice(9, 99999999)
@@ -54,23 +42,20 @@ export async function main(ns) {
 		const logged = stringify(returned)
 		const dateTime = `UPDATED ${new Date().toLocaleString()}`
 		const nextPoll = `NEXT UPDATE AT ${new Date(startTimestamp + poll).toLocaleString()} (${ns.tFormat(poll)})`
-		const vipPollTimestamp = `VIP FINISHED WILL FINISH AT ${new Date(vipTimestamp).toLocaleString()}`
 		const logDiv = '===================================='
 
 		// Write to log file.
 		await ns.write(logFileName, logged, 'a')
-		// await ns.write(logFileName, `\n${pollsLog}`, 'a')
+		await ns.write(logFileName, `\n${pollsLog}`, 'a')
 		await ns.write(logFileName, `\n${dateTime}`, 'a')
 		await ns.write(logFileName, `\n${nextPoll}`, 'a')
-		await ns.write(logFileName, `\n${vipPollTimestamp}`, 'a')
 		await ns.write(logFileName, `\n${logDiv}`, 'a')
 
 		// Write to log.
 		ns.print(logged)
-		// ns.print(pollsLog)
+		ns.print(pollsLog)
 		ns.print(dateTime)
 		ns.print(nextPoll)
-		ns.print(vipPollTimestamp)
 		ns.print(`APPENDED LOGS TO ${logFileName}`)
 		ns.print(logDiv)
 	}
