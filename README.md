@@ -14,6 +14,18 @@ Initializes by first getting all the server info and writing it to a JSON text f
 
 * Copy the files in the `src` git folder (ignore scripts in the `src/archive` folder) to `home` BitBurner, using the same file names
 * Run `init.js --deploy` to get initial config, stored in `config.txt` and then deploy scripts.
-* Run `init.js --clean` to remove existing files from all servers and kill all running scripts.
+  * Run `init.js --clean` to remove existing files from all servers and kill all running scripts.
+  * Add/remove your available tools to the `tools` string array
+* Run `nuker.js` to explot and nuke any un-nuked servers
+* Run the controller function to do the main hacking.
+  * Currently `controller-v4.js`
+  * Writes to the script log but also writes to `log.txt`
+* Run `killall.js` to kill all running scripts in all servers and home
+  * Run `cleanup-kill.js` to the same as above, in addition to also removing all files.
 
-# TODO
+## To Do
+
+* More descriptions and comments
+* Additional scripts, depending on game progression
+* Maybe find better target ranking formula
+* How to use `ns.weakenAnalyze()` properly??

@@ -22,9 +22,13 @@ export async function main(ns) {
 			}
 		})
 
+	const totalRam = servers.filter(s => s.hasRootAccess).reduce((r, s) => r += s.ram, 0)
+	const scriptMostRam = scripts.reduce((r, s) => s.ram > r ? s.ram : r, 0)
 	const config = {
 		meta: {
 			count: servers.length,
+			totalRam,
+			totalMinThreads: Math.floor(totalRam / scriptMostRam)
 		},
 		scripts,
 		tools,
@@ -78,6 +82,7 @@ const getServerInfo = (ns, server, parent) => {
 		hackTime: ns.getHackTime(server),
 		weakenTime: ns.getWeakenTime(server),
 		growTime: ns.getGrowTime(server),
+		hackAnalyzeChance: ns.hackAnalyzeChance(server),
 		parent,
 		children,
 	}
