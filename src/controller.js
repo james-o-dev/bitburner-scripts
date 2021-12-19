@@ -16,9 +16,12 @@ export async function main(ns) {
 
 	let poll = 0
 	let polls = []
+	let startTimestamp
 
 	while (true) {
 		await ns.sleep(poll)
+
+		startTimestamp = new Date().getTime()
 
 		let returned = []
 		for (let target of targets) {
@@ -38,7 +41,7 @@ export async function main(ns) {
 		// Strings for logging.
 		const logged = stringify(returned)
 		const dateTime = `UPDATED ${new Date().toLocaleString()}`
-		const nextPoll = `NEXT UPDATE IN ${ns.tFormat(poll)}`
+		const nextPoll = `NEXT UPDATE AT ${new Date(startTimestamp + poll).toLocaleString()} (${ns.tFormat(poll)})`
 		const logDiv = '===================================='
 
 		// Write to log file.
