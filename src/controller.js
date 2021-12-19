@@ -6,63 +6,47 @@ export async function main(ns) {
 
 	const config = JSON.parse(await ns.read(configFileName))
 
-	const logFileName = config.meta.logFileName
-
-	await ns.write(logFileName, '', 'w')
-
 	const targets = config.servers
 		.filter(s => s.hasRootAccess && !s.own && s.hackAnalyzeChance > 0 && s.value)
 		.sort((a, b) => b.value - a.value)
 
 	let poll = 0
-	let polls = []
+	let running = []
 	let startTimestamp
 
 	while (true) {
 		await ns.sleep(poll)
 
-		startTimestamp = new Date().getTime()
+		startTimestamp = getTimestamp()
+
+		// Remove all running threads which have since finished.
+		running = running.filter(r => r.timestampFinish > startTimestamp)
 
 		let returned = []
 		for (let target of targets) {
-			const targetReturn = hackTarget(ns, target, config)
-			if (!targetReturn.threadsUsed) break
-			returned.push(targetReturn)
+			const targetReturn = hackTarget(ns, target, config, running)
+			if (targetReturn.threadsUsed) {
+        returned.push(targetReturn)
+      }
 		}
 
-		// Keep a record of polls,
-		// In case none were returned, we wait for a longer running script.
-		polls = [...new Set([...polls, ...returned.map(tr => tr.poll)])].sort((a, b) => a - b)
-		// const pollsLog = `polls = ${polls.join(', ')}`
-		poll = polls.shift()
-		// Trim polls if there are too many.
-		if (polls.length > 10) polls.splice(9, 99999999)
-
-		// Strings for logging.
-		const logged = stringify(returned)
-		const dateTime = `UPDATED ${new Date().toLocaleString()}`
-		const nextPoll = `NEXT UPDATE AT ${new Date(startTimestamp + poll).toLocaleString()} (${ns.tFormat(poll)})`
-		const logDiv = '===================================='
-
-		// Write to log file.
-		await ns.write(logFileName, logged, 'a')
-		// await ns.write(logFileName, `\n${pollsLog}`, 'a')
-		await ns.write(logFileName, `\n${dateTime}`, 'a')
-		await ns.write(logFileName, `\n${nextPoll}`, 'a')
-		await ns.write(logFileName, `\n${logDiv}`, 'a')
+		// Get next timestamp.
+		running = [...running, ...returned].sort((a, b) => a.timestampFinish - b.timestampFinish)
+		// Get next poll from next timestamp.
+		poll = running[0].timestampFinish - startTimestamp + 2000
 
 		// Write to log.
-		ns.print(logged)
-		// ns.print(pollsLog)
-		ns.print(dateTime)
-		ns.print(nextPoll)
-		ns.print(`APPENDED LOGS TO ${logFileName}`)
-		ns.print(logDiv)
+		ns.clearLog()
+		ns.print(`QUEUE [${running.length}]:`)
+		ns.print(stringify(running))
+		ns.print(`UPDATED ${getTimestamp(startTimestamp, undefined, true)}`)
+		ns.print(`NEXT UPDATE AT ${getTimestamp(startTimestamp, poll, true)} (${ns.tFormat(poll)})`)
+		ns.print('====================================')
 	}
 }
 
 /** @param {NS} ns **/
-const hackTarget = (ns, target, config) => {
+const hackTarget = (ns, target, config, running) => {
 	// From config.
 	const scripts = config.scripts
 	const usableServers = config.servers.filter(s => s.hasRootAccess)
@@ -82,6 +66,7 @@ const hackTarget = (ns, target, config) => {
 	let threadsUsed = 0
 	let poll = 0
 	let message = ''
+	let threads = 0
 
 	// If above certain security - weaken
 	if (serverSecurityLevel > target.minSecurity + threshSecurity) {
@@ -107,37 +92,48 @@ const hackTarget = (ns, target, config) => {
 		threadsRequired = ns.hackAnalyzeThreads(target.name, hackToThresh)
 		message = 'hack by ' + nFormat(ns, hackToThresh)
 	}
-	poll += 1000
 	const scriptRam = scripts.find(s => s.name === script).ram
+
+	// Constraints for the threads required.
 	threadsRequired = Math.ceil(threadsRequired)
 
-	// Use home.
-	const homeAvailRam = homeMaxRam - ns.getServerUsedRam('home')
-	let homeThreads = Math.floor(homeAvailRam / scriptRam)
-	if (threadsRequired - threadsUsed < homeThreads) homeThreads = threadsRequired - threadsUsed
-	if (homeThreads) {
-		ns.exec(script, 'home', homeThreads, target.name)
-		threadsUsed += homeThreads
-	}
+	// Add on already used threads of this script for this target.
+	const alreadyRunningThreads = running.filter(r => r.target === target.name && r.script === script).reduce((t, ar) => t + ar.threadsUsed, 0)
+  threadsRequired -= alreadyRunningThreads
 
-	// Use other servers.
-	for (let server of usableServers) {
-		const availRam = server.ram - ns.getServerUsedRam(server.name)
-		let threads = Math.floor(availRam / scriptRam)
-		if (threadsRequired - threadsUsed < threads) threads = threadsRequired - threadsUsed
-		if (threads) {
-			ns.exec(script, server.name, threads, target.name)
-			threadsUsed += threads
-		}
-	}
+  if (threadsRequired > 0) {
+    // Use home.
+    const homeAvailRam = homeMaxRam - ns.getServerUsedRam('home')
+    threads = Math.floor(homeAvailRam / scriptRam)
+    if (threadsRequired - threadsUsed < threads) threads = threadsRequired - threadsUsed
+    if (threads > 0) {
+      ns.exec(script, 'home', threads, target.name)
+      threadsUsed += threads
+    }
 
+    // Use other servers.
+    for (let server of usableServers) {
+      const availRam = server.ram - ns.getServerUsedRam(server.name)
+      threads = Math.floor(availRam / scriptRam)
+      if (threadsRequired - threadsUsed < threads) threads = threadsRequired - threadsUsed
+      if (threads > 0) {
+        ns.exec(script, server.name, threads, target.name)
+        threadsUsed += threads
+      }
+    }
+  }
+
+	const timestampFinish = getTimestamp(undefined, poll)
 	return {
 		target: target.name,
+		script,
 		threadsRequired,
 		threadsUsed,
 		poll,
+		timestampFinish,
+    value: target.value,
 		pollf: ns.tFormat(poll),
-		script,
+		timestampFinishf: getTimestamp(timestampFinish, poll, true),
 		message,
 	}
 }
@@ -146,3 +142,8 @@ const hackTarget = (ns, target, config) => {
 const nFormat = (ns, number) => ns.nFormat(number, '0,0')
 
 const stringify = (obj) => JSON.stringify(obj, null, 2)
+
+const getTimestamp = (date = Date.now(), addMs = 0, toString = false) => {
+	const timestamp = new Date(date).getTime() + addMs
+	return toString ? new Date(timestamp).toLocaleString() : timestamp
+}
