@@ -1,4 +1,6 @@
 const configFileName = 'config.txt'
+const queueMaxLength = 10 // Maximum length of the queue; If it goes above, use a longer timestamp to reduce the queue length
+const pollDelay = 2000 // Extra delay when polling; Acts as minimum.
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -6,13 +8,16 @@ export async function main(ns) {
 
 	const config = JSON.parse(await ns.read(configFileName))
 
-	const targets = config.servers
-		.filter(s => s.hasRootAccess && !s.own && s.hackAnalyzeChance > 0 && s.value)
-		.sort((a, b) => b.value - a.value)
+  // Get target servers to hack.
+	let targets = config.servers.filter(s => s.hasRootAccess && !s.own && s.hackAnalyzeChance > 0 && s.value)
+  // Only choose targets of above average value and sort them from highest value to lowest.
+  const avgValue = targets.reduce((a, t) => a + t.value, 0) / targets.length
+  targets = targets.filter(t => t.value > avgValue).sort((a, b) => b.value - a.value)
 
 	let poll = 0
-	let running = []
+	let queue = []
 	let startTimestamp
+  let timestampFinish
 
 	while (true) {
 		await ns.sleep(poll)
@@ -20,25 +25,33 @@ export async function main(ns) {
 		startTimestamp = getTimestamp()
 
 		// Remove all running threads which have since finished.
-		running = running.filter(r => r.timestampFinish > startTimestamp)
+		queue = queue.filter(r => r.timestampFinish > startTimestamp)
 
 		let returned = []
 		for (let target of targets) {
-			const targetReturn = hackTarget(ns, target, config, running)
-			if (targetReturn.threadsUsed) {
-				returned.push(targetReturn)
+			const targetExec = hackTarget(ns, target, config, queue)
+			if (targetExec.threadsUsed) {
+				returned.push(targetExec)
 			}
 		}
 
 		// Get next timestamp.
-		running = [...running, ...returned].sort((a, b) => a.timestampFinish - b.timestampFinish)
-		// Get next poll from next timestamp.
-		poll = running.shift().timestampFinish - startTimestamp + 2000
+		queue = [...queue, ...returned].sort((a, b) => a.timestampFinish - b.timestampFinish)
+
+    if (queue.length > queueMaxLength) {
+      // If the queue reaches at certain length, wait longer until it reduces.
+      const queueStart = queue.length - queueMaxLength
+      timestampFinish = queue[queueStart].timestampFinish
+    } else {
+      // Else, get next poll from next timestamp.
+      timestampFinish = queue.shift().timestampFinish
+    }
+    poll = timestampFinish - startTimestamp + pollDelay
 
 		// Write to log.
 		ns.clearLog()
-		ns.print(`QUEUE [${running.length}]:`)
-		ns.print(stringify(running))
+		ns.print(`QUEUE [${queue.length}]:`)
+		ns.print(stringify(queue))
 		ns.print(`UPDATED ${getTimestamp(startTimestamp, undefined, true)}`)
 		ns.print(`NEXT UPDATE AT ${getTimestamp(startTimestamp, poll, true)} (${ns.tFormat(poll)})`)
 		ns.print('====================================')
@@ -46,7 +59,7 @@ export async function main(ns) {
 }
 
 /** @param {NS} ns **/
-const hackTarget = (ns, target, config, running) => {
+const hackTarget = (ns, target, config, queue) => {
 	// From config.
 	const scripts = config.scripts
 	const usableServers = config.servers.filter(s => s.hasRootAccess)
@@ -98,7 +111,7 @@ const hackTarget = (ns, target, config, running) => {
 	threadsRequired = Math.ceil(threadsRequired)
 
 	// Add on already used threads of this script for this target.
-	const alreadyRunningThreads = running.filter(r => r.target === target.name && r.script === script).reduce((t, ar) => t + ar.threadsUsed, 0)
+	const alreadyRunningThreads = queue.filter(r => r.target === target.name && r.script === script).reduce((t, ar) => t + ar.threadsUsed, 0)
 	threadsRequired -= alreadyRunningThreads
 
 	if (threadsRequired > 0) {
