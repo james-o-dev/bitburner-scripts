@@ -33,7 +33,7 @@ export async function main(ns) {
 		// Keep a record of polls,
 		// In case none were returned, we wait for a longer running script.
 		polls = [...new Set([...polls, ...returned.map(tr => tr.poll)])].sort((a, b) => a - b)
-		const pollsLog = `polls = ${polls.join(', ')}`
+		// const pollsLog = `polls = ${polls.join(', ')}`
 		poll = polls.shift()
 		// Trim polls if there are too many.
 		if (polls.length > 10) polls.splice(9, 99999999)
@@ -46,14 +46,14 @@ export async function main(ns) {
 
 		// Write to log file.
 		await ns.write(logFileName, logged, 'a')
-		await ns.write(logFileName, `\n${pollsLog}`, 'a')
+		// await ns.write(logFileName, `\n${pollsLog}`, 'a')
 		await ns.write(logFileName, `\n${dateTime}`, 'a')
 		await ns.write(logFileName, `\n${nextPoll}`, 'a')
 		await ns.write(logFileName, `\n${logDiv}`, 'a')
 
 		// Write to log.
 		ns.print(logged)
-		ns.print(pollsLog)
+		// ns.print(pollsLog)
 		ns.print(dateTime)
 		ns.print(nextPoll)
 		ns.print(`APPENDED LOGS TO ${logFileName}`)
