@@ -44,7 +44,7 @@ export async function main(ns) {
       timestampFinish = queue[queueStart].timestampFinish
     } else {
       // Else, get next poll from next timestamp.
-      timestampFinish = queue.shift().timestampFinish
+      timestampFinish = queue[0].timestampFinish
     }
     poll = timestampFinish - startTimestamp + pollDelay
 
