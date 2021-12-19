@@ -4,7 +4,6 @@ const tools = ['BruteSSH.exe', 'FTPCrack.exe']
 const threshMoney = 0.75 // Should not hack if below this % of max money
 const threshSecurity = 5 // Should weaken until it is at most these levels above security
 const configFileName = 'config.txt'
-const logFileName = 'logs.txt'
 const homeReserved = 2.1 // Harcoded, use `mem init.js`
 const weakenAnalyzeOneThread = 0.05 // How much one thread weakens.
 
@@ -29,7 +28,7 @@ export async function main(ns) {
 			}
 		})
 
-	const totalRam = servers.filter(s => s.hasRootAccess).reduce((r, s) => r += s.ram, 0)
+	const totalRam = servers.filter(s => s.hasRootAccess).reduce((r, s) => r + s.ram, 0)
 	const scriptMostRam = scripts.reduce((r, s) => s.ram > r ? s.ram : r, 0)
 	const config = {
 		meta: {
@@ -40,7 +39,6 @@ export async function main(ns) {
 			threshMoney,
 			threshSecurity,
 			configFileName,
-			logFileName,
 			homeReserved,
 			weakenAnalyzeOneThread,
 		},
