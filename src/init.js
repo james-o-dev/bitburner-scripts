@@ -94,7 +94,12 @@ const getServerInfo = (ns, server, parent, tools) => {
 	// value = (s.maxMoney * s.hackAnalyzeChance) / s.minSecurity
 
 	// Time-based: Based on max-money times hack chance, divided by the time it takes for the operations.
-	value = (maxMoney * hackAnalyzeChance) / (hackTime + weakenTime + growTime)
+	value = (maxMoney * hackAnalyzeChance * ns.hackAnalyze(server)) / (hackTime + weakenTime + growTime)
+
+  // https://discord.com/channels/415207508303544321/415207839246581781/922271569827475456
+  // let money = hackAnalyzeChance * ns.hackAnalyze(server) * maxMoney
+  // let gt = ns.growthAnalyze(server, 1/(1 - ns.hackAnalyze(server)), cores)
+  // value = money / (growTime * gt)
 
 	return {
 		name: server,
@@ -103,6 +108,7 @@ const getServerInfo = (ns, server, parent, tools) => {
 		maxMoney,
 		minSecurity,
 		canHack: reqHacking <= ns.getHackingLevel() && reqPorts <= tools.length,
+    hackAnalyze,
 		hackAnalyzeChance,
 		hasRootAccess: ns.hasRootAccess(server),
 		ls: ns.ls(server),
