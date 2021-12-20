@@ -12,6 +12,5 @@ export async function main(ns) {
 	}
 
 	ns.rm('config.txt')
-	ns.rm('logs.txt')
 	ns.run('init.js')
 }

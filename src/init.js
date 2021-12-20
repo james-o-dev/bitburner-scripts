@@ -1,6 +1,6 @@
 // Settings
 const scriptNames = ['grow.js', 'weaken.js', 'hack.js']
-const tools = ['BruteSSH.exe', 'FTPCrack.exe']
+const possibleTools = ['BruteSSH.exe', 'FTPCrack.exe', 'RelaySMTP.exe', 'HTTPWorm.exe', 'SQLInject.exe']
 const threshMoney = 0.75 // Should not hack if below this % of max money
 const threshSecurity = 5 // Should weaken until it is at most these levels above security
 const configFileName = 'config.txt'
@@ -14,7 +14,8 @@ const flagNames = [
 
 /** @param {NS} ns **/
 export async function main(ns) {
-	const home = getServerInfo(ns, 'home', null)
+  const tools = possibleTools.filter(t => ns.fileExists(t, 'home'))
+	const home = getServerInfo(ns, 'home', null, tools)
 	const flags = ns.flags(flagNames)
 
 	let servers = []
@@ -71,12 +72,12 @@ const flatten = (list, parent) => {
 }
 
 /** @param {NS} ns **/
-const getServerInfo = (ns, server, parent) => {
+const getServerInfo = (ns, server, parent, tools) => {
 
 	const scan = ns.scan(server)
 	const children = scan
 		.filter(s => s !== server && s !== parent)
-		.map(s => getServerInfo(ns, s, server))
+		.map(s => getServerInfo(ns, s, server, tools))
 	// .filter(s => s.own || s.canHack)
 
 	const reqHacking = ns.getServerRequiredHackingLevel(server)

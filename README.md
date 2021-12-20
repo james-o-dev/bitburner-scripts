@@ -16,11 +16,10 @@ Initializes by first getting all the server info and writing it to a JSON text f
 * Run `init.js --deploy` to get initial config, stored in `config.txt` and then deploy scripts.
   * Use `deploy.js` to deploy the scripts manually, without running `init.js`
   * Run `init.js --clean` to remove existing files from all servers and kill all running scripts.
-  * Add/remove your available tools to the `tools` string array as you get them.
-* Run `nuker.js` to explot and nuke any un-nuked servers
-* Run the `controller.js` function to do the main hacking.
-* Run `killall.js` to kill all running scripts in all servers and home
-  * Run `cleanup-kill.js` to the same as above, in addition to also removing all files.
+* Run `nuker.js` to exploit and nuke any un-nuked servers
+* Run `controller.js` function to do the main hacking.
+* Run `killall.js` to kill all running scripts on all servers and home
+  * Run `cleanup-kill.js` to the same as above, in addition to also removing all files on remote servers, as well as the `config.txt` on the home server.
 
 ## To Do
 
