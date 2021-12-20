@@ -1,8 +1,8 @@
 // Settings
 const scriptNames = ['grow.js', 'weaken.js', 'hack.js']
 const possibleTools = ['BruteSSH.exe', 'FTPCrack.exe', 'RelaySMTP.exe', 'HTTPWorm.exe', 'SQLInject.exe']
-const threshMoney = 0.75 // Should not hack if below this % of max money
-const threshSecurity = 5 // Should weaken until it is at most these levels above security
+const threshMoney = 0.9 // Should not hack if below this % of max money
+const threshSecurity = 3 // Should weaken until it is at most these levels above security
 const configFileName = 'config.txt'
 const homeReserved = 2.1 // Harcoded, use `mem init.js`
 const weakenAnalyzeOneThread = 0.05 // How much one thread weakens.
