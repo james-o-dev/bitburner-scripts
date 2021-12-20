@@ -28,6 +28,17 @@ Edit the constants at the top of `init.js`; Some useful things to adjust:
   * `homeReserved`: Adjust if you need; Set to 0 if you don't need to reserve and ram at home; Recommended to at least reserve the value of `mem killall.js`.
     * If none is reserved, you must manually kill `controller.js` before you can `run killall.js`
 
+Edit the constants at the top of `controller.js`; Some useful things to adjust:
+  * `threshMoney`: Lower value means it will take more money at once but is overall less optimal; Vice-versa for a higher value.
+  * `pollDelay`: Adds extra delay when polling; Acts as the minimum. May decrease for better spead at the expense of some stability (?)
+  * `queueMaxLength`: Will attempt to keep the queue under this length; If the queue goes over this length, it will wait for a timestamp further along in the queue.
+    * Play around with this.
+  * `onlyAboveAvgTargets`: True to only include hack targets above the average "value"; False to hack all targets
+    * False provides higher thread throughput, however...
+    * Possibly higher returns with true due to having more free threads for higher value targets than using them on lower level ones.
+    * "Value" (determined in `init.js`) is currently determined by the max-money multipied by hack chance, divided by the sum of all operation times, for that server.
+    * Play around with this, and also with the value calculation.
+
 ### Kill All Running Scripts
 
 `run killall.js`
