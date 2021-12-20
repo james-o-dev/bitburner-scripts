@@ -29,18 +29,18 @@ export async function main(ns) {
 			}
 		})
 
-	const totalRam = servers.filter(s => s.hasRootAccess).reduce((r, s) => r + s.ram, 0)
+  const homeMaxRam = ns.getServerMaxRam('home') - homeReserved
+	const totalRam = servers.filter(s => s.hasRootAccess).reduce((r, s) => r + s.ram, 0) + homeMaxRam
 	const scriptMostRam = scripts.reduce((r, s) => s.ram > r ? s.ram : r, 0)
 	const config = {
 		meta: {
 			count: servers.length,
 			totalRam,
 			totalMinThreads: Math.floor(totalRam / scriptMostRam),
-			homeMaxRam: ns.getServerMaxRam('home'),
+			homeMaxRam,
 			threshMoney,
 			threshSecurity,
 			configFileName,
-			homeReserved,
 			weakenAnalyzeOneThread,
 		},
 		scripts,

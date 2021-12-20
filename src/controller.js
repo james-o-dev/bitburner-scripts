@@ -63,7 +63,7 @@ const hackTarget = (ns, target, config, queue) => {
 	// From config.
 	const scripts = config.scripts
 	const usableServers = config.servers.filter(s => s.hasRootAccess)
-	const homeMaxRam = config.meta.homeMaxRam - config.meta.homeReserved
+	const homeMaxRam = config.meta.homeMaxRam
 	const threshMoney = config.meta.threshMoney
 	const threshSecurity = config.meta.threshSecurity
 	const weakenAnalyzeOneThread = config.meta.weakenAnalyzeOneThread
