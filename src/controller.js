@@ -1,10 +1,6 @@
 const configFileName = 'config.txt'
-const queueMaxLength = 10 // Maximum length of the queue; If it goes above, use a longer timestamp to reduce the queue length
 const pollDelay = 2000 // Extra delay when polling; Acts as minimum.
-// Set to true to only target higher than average target; False to target all for higher thread throughput
-// Possibly better when true, due to having more free threads for higher value targets than using them on lower level ones.
-// Play around with this...
-const onlyAboveAvgTargets = true
+const queueMaxLength = 10 // Maximum length of the queue; If it goes above, use a longer timestamp to reduce the queue length
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -12,19 +8,17 @@ export async function main(ns) {
 
 	const config = JSON.parse(await ns.read(configFileName))
 
-  // Get target servers to hack.
+	// Get target servers to hack.
+	const threshTarget = config.meta.threshTarget
 	let targets = config.servers.filter(s => s.hasRootAccess && !s.own && s.hackAnalyzeChance > 0 && s.value)
-  // Only choose targets of above average value and sort them from highest value to lowest.
-  if (onlyAboveAvgTargets) {
-    const avgValue = targets.reduce((a, t) => a + t.value, 0) / targets.length
-    targets = targets.filter(t => t.value > avgValue)
-  }
-  targets = targets.sort((a, b) => b.value - a.value)
+	const maxTargetValue = targets.reduce((m, t) => t.value > m ? t.value : m, 0)
+	const targetValueThresh = maxTargetValue * threshTarget
+	targets = targets.filter(t => t.value > targetValueThresh).sort((a, b) => b.value - a.value)
 
 	let poll = 0
 	let queue = []
 	let startTimestamp
-  let timestampFinish
+	let timestampFinish
 
 	while (true) {
 		await ns.sleep(poll)
@@ -45,15 +39,15 @@ export async function main(ns) {
 		// Get next timestamp.
 		queue = [...queue, ...returned].sort((a, b) => a.timestampFinish - b.timestampFinish)
 
-    if (queue.length > queueMaxLength) {
-      // If the queue reaches at certain length, wait longer until it reduces.
-      const queueStart = queue.length - queueMaxLength
-      timestampFinish = queue[queueStart].timestampFinish
-    } else {
-      // Else, get next poll from next timestamp.
-      timestampFinish = queue[0].timestampFinish
-    }
-    poll = timestampFinish - startTimestamp + pollDelay
+		if (queue.length > queueMaxLength) {
+			// If the queue reaches at certain length, wait longer until it reduces.
+			const queueStart = queue.length - queueMaxLength
+			timestampFinish = queue[queueStart].timestampFinish
+		} else {
+			// Else, get next poll from next timestamp.
+			timestampFinish = queue[0].timestampFinish
+		}
+		poll = timestampFinish - startTimestamp + pollDelay
 
 		// Write to log.
 		ns.clearLog()
@@ -145,16 +139,16 @@ const hackTarget = (ns, target, config, queue) => {
 
 	const timestampFinish = getTimestamp(undefined, poll)
 	return {
-		target: target.name,
+		message,
+		poll,
+		pollf: ns.tFormat(poll),
 		script,
+		target: target.name,
 		threadsRequired,
 		threadsUsed,
-		// poll,
 		timestampFinish,
-		value: target.value,
-		// pollf: ns.tFormat(poll),
 		timestampFinishf: getTimestamp(timestampFinish, undefined, true),
-		message,
+		value: target.value,
 	}
 }
 

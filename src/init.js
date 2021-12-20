@@ -1,10 +1,11 @@
 // Settings
-const scriptNames = ['grow.js', 'weaken.js', 'hack.js']
-const possibleTools = ['BruteSSH.exe', 'FTPCrack.exe', 'RelaySMTP.exe', 'HTTPWorm.exe', 'SQLInject.exe']
-const threshMoney = 0.9 // Should not hack if below this % of max money
-const threshSecurity = 3 // Should weaken until it is at most these levels above security
 const configFileName = 'config.txt'
 const homeReserved = 2.1 // Harcoded, use `mem init.js`
+const possibleTools = ['BruteSSH.exe', 'FTPCrack.exe', 'RelaySMTP.exe', 'HTTPWorm.exe', 'SQLInject.exe']
+const scriptNames = ['grow.js', 'weaken.js', 'hack.js']
+const threshTarget = 0.5
+const threshMoney = 0.9 // Should not hack if below this % of max money
+const threshSecurity = 3 // Should weaken until it is at most these levels above security
 const weakenAnalyzeOneThread = 0.05 // How much one thread weakens.
 
 const flagNames = [
@@ -34,13 +35,14 @@ export async function main(ns) {
 	const scriptMostRam = scripts.reduce((r, s) => s.ram > r ? s.ram : r, 0)
 	const config = {
 		meta: {
+			configFileName,
 			count: servers.length,
-			totalRam,
-			totalMinThreads: Math.floor(totalRam / scriptMostRam),
 			homeMaxRam,
 			threshMoney,
 			threshSecurity,
-			configFileName,
+			threshTarget,
+			totalMinThreads: Math.floor(totalRam / scriptMostRam),
+			totalRam,
 			weakenAnalyzeOneThread,
 		},
 		scripts,
@@ -96,27 +98,26 @@ const getServerInfo = (ns, server, parent, tools) => {
 	// Time-based: Based on max-money times hack chance, divided by the time it takes for the operations.
 	value = (maxMoney * hackAnalyzeChance * ns.hackAnalyze(server)) / (hackTime + weakenTime + growTime)
 
-  // https://discord.com/channels/415207508303544321/415207839246581781/922271569827475456
-  // let money = hackAnalyzeChance * ns.hackAnalyze(server) * maxMoney
-  // let gt = ns.growthAnalyze(server, 1/(1 - ns.hackAnalyze(server)), cores)
-  // value = money / (growTime * gt)
+	// https://discord.com/channels/415207508303544321/415207839246581781/922271569827475456
+	// let money = hackAnalyzeChance * ns.hackAnalyze(server) * maxMoney
+	// let gt = ns.growthAnalyze(server, 1/(1 - ns.hackAnalyze(server)), cores)
+	// value = money / (growTime * gt)
 
 	return {
-		name: server,
-		ram: ns.getServerMaxRam(server),
-		own: ns.getPurchasedServers().includes(server),
-		maxMoney,
-		minSecurity,
 		canHack: reqHacking <= ns.getHackingLevel() && reqPorts <= tools.length,
-    hackAnalyze,
+		children,
+		growTime,
 		hackAnalyzeChance,
+		hackTime,
 		hasRootAccess: ns.hasRootAccess(server),
 		ls: ns.ls(server),
-		hackTime,
-		weakenTime,
-		growTime,
-		value,
+		maxMoney,
+		minSecurity,
+		name: server,
+		own: ns.getPurchasedServers().includes(server),
 		parent,
-		children,
+		ram: ns.getServerMaxRam(server),
+		value,
+		weakenTime,
 	}
 }
