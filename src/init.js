@@ -14,7 +14,7 @@ const flagNames = [
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  const tools = possibleTools.filter(t => ns.fileExists(t, 'home'))
+	const tools = possibleTools.filter(t => ns.fileExists(t, 'home'))
 	const home = getServerInfo(ns, 'home', null, tools)
 	const flags = ns.flags(flagNames)
 
@@ -29,7 +29,7 @@ export async function main(ns) {
 			}
 		})
 
-  const homeMaxRam = ns.getServerMaxRam('home') - homeReserved
+	const homeMaxRam = ns.getServerMaxRam('home') - homeReserved
 	const totalRam = servers.filter(s => s.hasRootAccess).reduce((r, s) => r + s.ram, 0) + homeMaxRam
 	const scriptMostRam = scripts.reduce((r, s) => s.ram > r ? s.ram : r, 0)
 	const config = {
@@ -51,12 +51,10 @@ export async function main(ns) {
 	await ns.write(configFileName, JSON.stringify(config, null, 2), 'w')
 
 	if (flags.clean) {
-		ns.run('cleanup-kill.js')
-		ns.tprint('clean ' + flags.clean)
+		ns.spawn('cleanup-kill.js')
 	}
 	else if (flags.deploy) {
-		ns.run('deploy.js')
-		ns.tprint('deploy ' + flags.deploy)
+		ns.spawn('deploy.js')
 	}
 }
 
@@ -78,7 +76,6 @@ const getServerInfo = (ns, server, parent, tools) => {
 	const children = scan
 		.filter(s => s !== server && s !== parent)
 		.map(s => getServerInfo(ns, s, server, tools))
-	// .filter(s => s.own || s.canHack)
 
 	const reqHacking = ns.getServerRequiredHackingLevel(server)
 	const reqPorts = ns.getServerNumPortsRequired(server)
@@ -93,10 +90,10 @@ const getServerInfo = (ns, server, parent, tools) => {
 
 	let value
 
-	// Simple: Based on max-money times changes, divided by minimum security.
+	// Simple: Based on max-money times hack chance, divided by minimum security.
 	// value = (s.maxMoney * s.hackAnalyzeChance) / s.minSecurity
 
-	// Time-based: Take into account the time it takes for operations.
+	// Time-based: Based on max-money times hack chance, divided by the time it takes for the operations.
 	value = (maxMoney * hackAnalyzeChance) / (hackTime + weakenTime + growTime)
 
 	return {
