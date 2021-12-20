@@ -1,6 +1,10 @@
 const configFileName = 'config.txt'
 const queueMaxLength = 10 // Maximum length of the queue; If it goes above, use a longer timestamp to reduce the queue length
 const pollDelay = 2000 // Extra delay when polling; Acts as minimum.
+// Set to true to only target higher than average target; False to target all for higher thread throughput
+// Possibly better when true, due to having more free threads for higher value targets than using them on lower level ones.
+// Play around with this...
+const onlyAboveAvgTargets = true
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -11,8 +15,11 @@ export async function main(ns) {
   // Get target servers to hack.
 	let targets = config.servers.filter(s => s.hasRootAccess && !s.own && s.hackAnalyzeChance > 0 && s.value)
   // Only choose targets of above average value and sort them from highest value to lowest.
-  const avgValue = targets.reduce((a, t) => a + t.value, 0) / targets.length
-  targets = targets.filter(t => t.value > avgValue).sort((a, b) => b.value - a.value)
+  if (onlyAboveAvgTargets) {
+    const avgValue = targets.reduce((a, t) => a + t.value, 0) / targets.length
+    targets = targets.filter(t => t.value > avgValue)
+  }
+  targets = targets.sort((a, b) => b.value - a.value)
 
 	let poll = 0
 	let queue = []
