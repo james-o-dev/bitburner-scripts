@@ -4,11 +4,11 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 
 ## Summary
 
-Main idea is to split up scripts so that the ones that benefit from threading are as small as possible (to allow maximum threads).
+The main idea is to split up scripts so that the ones that benefit from threading are as small as possible (to allow maximum threads).
 
-Separate out scripts that run constantly from scripts that only need to be run once/infrequently, or manually.
+Separate out scripts that run constantly from scripts that only need to be run once/infrequently, or manually. The scripts that run constantly should take as little ram as possible, in order to maximum the number of threads.
 
-Initializes by first getting all the server info and writing it to a JSON text file, so it does not have to use the `ns` methods each time.
+It initializes by first getting all the server info and writing it to a JSON text file, so it does not have to use the `ns` methods each time.
 
 ## Getting Started
 
@@ -30,11 +30,12 @@ Edit the constants at the top of `init.js`; Some useful things to adjust:
     * Possibly higher money returns if this value is higher, due to having more free threads for higher value targets than using them on lower level ones.
     * "Value" (determined in `init.js`) is currently determined by the max-money multipied by hack chance and money returned from a single thread, divided by the sum of all operation times, for that server.
     * Play around with this, and also with the value calculation.
-  * `homeReserved`: Adjust if you need; Set to 0 if you don't need to reserve and ram at home; Recommended to at least reserve the value of `mem killall.js`.
+  * `homeReserved`: Adjust as needed; Set to 0 if you don't need to reserve ram at home; Recommended to reserve the value of `mem killall.js`, at the very least (for convenient killing all runnin scripts).
     * If none is reserved, you must manually kill `controller.js` before you can `run killall.js`
 
 Edit the constants at the top of `controller.js`; Some useful things to adjust:
   * `pollDelay`: Adds extra delay when polling; Acts as the minimum. May decrease for better spead at the expense of some stability (?)
+    * Play around with this.
   * `queueMaxLength`: Will attempt to keep the queue under this length; If the queue goes over this length, it will wait for a timestamp further along in the queue.
     * Play around with this.
 
@@ -53,4 +54,4 @@ This should be done whenever:
 
 * More descriptions and comments
 * Additional scripts, depending on game progression
-* Maybe find better target ranking formula?
+* Improve / try out different target ranking formula?
