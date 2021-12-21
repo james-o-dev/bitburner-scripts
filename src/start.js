@@ -1,23 +1,37 @@
-import { GAME_CONSTANTS, PORT, SETTINGS, stringify } from 'shared.js'
+import { GAME_CONSTANTS, PORT, SCRIPT, SETTINGS, stringify } from 'shared.js'
+
+const flagConfig = [
+	['run', false],
+	['killall', false],
+]
 
 /** @param {NS} ns **/
 export async function main(ns) {
+	const flags = ns.flags(flagConfig)
+
 	// Get all servers.
 	const servers = getServersRecursive(ns, GAME_CONSTANTS.HOME, null)
 		.map(s => {
 			const serverObject = getServerDetails(ns, s, { reservedRam: GAME_CONSTANTS.HOME ? SETTINGS.HOME_RESERVED_RAM : 0 })
 			serverObject.hasRootAccess = nuke(ns, s)
-			// await copyScripts(ns, s)
 			return serverObject
 		})
 
+	for (let server of servers) {
+		if (server.hasRootAccess) await copyScripts(ns, server.name)
+	}
+
 	const serversString = stringify(servers)
-	// ns.tprint(serversString)
+
 	ns.clearPort(PORT.SERVERS)
 	await ns.writePort(PORT.SERVERS, serversString)
 
-	// ns.run('/new/run.js', 1)
-	// ns.run('/new/consumer.js', 1)
+	if (flags.run) {
+		ns.run('producer.js', 1)
+		ns.spawn('consumer.js', 1)
+	} else if (flags.killall) {
+		ns.run('killall.js', 1)
+	}
 }
 
 /** @param {NS} ns **/
@@ -69,6 +83,13 @@ const getServerDetails = (ns, name, { reserveRam } = {}) => {
 	}
 }
 
+/** @param {NS} ns **/
 const copyScripts = async (ns, server) => {
-
+	const files = [
+		SCRIPT.GROW,
+		SCRIPT.HACK,
+		SCRIPT.SHARED,
+		SCRIPT.WEAKEN,
+	]
+	return ns.scp(files, GAME_CONSTANTS.HOME, server)
 }

@@ -15,6 +15,7 @@ export const PORT = {
 export const SCRIPT = {
 	GROW: 'grow.js',
 	HACK: 'hack.js',
+	SHARED: 'shared.js',
 	WEAKEN: 'weaken.js',
 }
 export const SCRIPT_RAM = {
@@ -33,8 +34,8 @@ export const GAME_CONSTANTS = {
 /** @param {NS} ns **/
 export function getServers(ns) {
 	const fromPort = getQueue(ns, PORT.SERVERS)
-	if (fromPort.length === 0) throw new Error('run servers.js first')
-	return JSON.parse(fromPort)
+	if (fromPort.length === 0) throw new Error('run start.js first')
+	return fromPort
 }
 
 /** @param {NS} ns **/
