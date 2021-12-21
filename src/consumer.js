@@ -4,13 +4,13 @@ import { doPolling, getQueue, getServers, PORT, setQueue, SCRIPT, SCRIPT_RAM, st
 export async function main(ns) {
 	ns.disableLog('ALL')
 
-	const usable = getServers().filter(s => s.hasRootAccess).sort((a, b) => b.maxRam - a.maxRam)
+	const usable = getServers(ns).filter(s => s.hasRootAccess).sort((a, b) => b.maxRam - a.maxRam)
 
 	while (true) {
 		await doPolling(ns)
 
-		let readyQueue = getQueue(PORT.QUEUE_READY)
-		let runningQueue = getQueue(PORT.QUEUE_RUNNING)
+		let readyQueue = getQueue(ns, PORT.QUEUE_READY)
+		let runningQueue = getQueue(ns, PORT.QUEUE_RUNNING)
 
 		for (let queued of readyQueue) {
 			let {
@@ -35,9 +35,9 @@ export async function main(ns) {
 			for (let server of usable) {
 				let threads = 0
 
-				if (reqThreads < 0) break
+				if (reqThreads <= 0) break
 
-				const threadsAvailable = Math.floor((server.maxRam - ns.getServerUsedRam(ns)) / scriptRam)
+				const threadsAvailable = Math.floor((server.maxRam - ns.getServerUsedRam(server.name)) / scriptRam)
 
 				if (threadsAvailable === 0) continue
 				else if (threadsAvailable > reqThreads) threads = threadsAvailable - reqThreads
@@ -54,7 +54,7 @@ export async function main(ns) {
 				}
 			}
 
-			if (reqThreads < 0) {
+			if (reqThreads <= 0) {
 				readyQueue.shift()
 			} else {
 				queued.threads = reqThreads
@@ -65,10 +65,10 @@ export async function main(ns) {
 
 		ns.clearLog()
 		await setQueue(ns, PORT.QUEUE_READY, readyQueue)
+		ns.print('READY')
+		ns.print(stringify(readyQueue))
 		await setQueue(ns, PORT.QUEUE_RUNNING, runningQueue)
 		ns.print('RUNNING')
-		ns.print(stringify(readyQueue))
-		ns.print('READY')
 		ns.print(stringify(runningQueue))
 	}
 
