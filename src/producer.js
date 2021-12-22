@@ -48,7 +48,7 @@ export async function main(ns) {
 				// Else if money is lower than money threshold, grow.
 				else if (moneyAvailable < moneyMinimum) {
 					script = SCRIPT.GROW
-					const growthDiff = 1 + ((target.maxMoney - moneyAvailable) / target.maxMoney)
+					const growthDiff = target.maxMoney / moneyAvailable
 					threads = Math.ceil(ns.growthAnalyze(target.name, growthDiff))
 				}
 				// Else hack.
