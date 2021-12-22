@@ -1,44 +1,47 @@
 const flagsConfig = [
-  ['dry-run', false],
-  ['limit', 1]
+	['dry-run', false],
 ]
 
 /** @param {NS} ns **/
 export async function main(ns) {
-  const flags = ns.flags(flagsConfig)
-  const limit = flags.limit
+	const flags = ns.flags(flagsConfig)
+	const dryRun = flags['dry-run']
+	const dryRunPrefix = dryRun ? '[DRY RUN] ' : ''
+	const purchasedServers = ns.getPurchasedServers()
+	const purchasedLimit = ns.getPurchasedServerLimit()
 
-  const maxLimit = ns.getPurchasedServerLimit() - ns.getPurchasedServers().length
+	ns.tprint(`Purchased server count: ${purchasedServers.length}/${purchasedLimit}`)
 
-  for (let i = 0; i < maxLimit; i++) {
-    if (i > limit - 1) break
+	const ram = getMaxAffordable(ns)
 
-    const ram = getMaxAffordable(ns)
-    if (ram) {
-      const cost = ns.getPurchasedServerCost(ram)
-      const ramf = `${ns.nFormat(ram, '0,0')}GB`
+	if (ram) {
+		const cost = ns.getPurchasedServerCost(ram)
+		const ramf = `${ns.nFormat(ram, '0,0')}GB`
 
-      if (flags['dry-run']) {
-        ns.tprint(`DRY-RUN: MAX ${ramf} | COST ${ns.nFormat(cost, '$0,0.00')}`)
-        return
-      }
+		// If at max servers, delete the one with the least ram.
+		if (purchasedServers.length >= purchasedLimit) {
+			const serverToDelete = purchasedServers.reduce((r, s) => !r || (ns.getServerMaxRam(s) < ns.getServerMaxRam(r)) ? s : r, null)
 
-      const server = ns.purchaseServer(`pserv${Math.random()}`, ram)
-      ns.tprint(`Purchased ${server} | ${ramf} | ${ns.nFormat(cost, '$0,0.00')}`)
-    }
-  }
+			if (!dryRun) ns.deleteServer(serverToDelete)
+			ns.tprint(`${dryRunPrefix}Destroyed ${serverToDelete}`)
+		}
+
+		let server = dryRunPrefix.trim()
+		if (!dryRun) server = ns.purchaseServer(`pserv${Math.random()}`, ram)
+		ns.tprint(`Purchased ${server} | ${ramf} | ${ns.nFormat(cost, '$0,0.00')}`)
+	}
 }
 
 /** @param {NS} ns **/
 const getMaxAffordable = (ns) => {
-  const money = ns.getPlayer().money
+	const money = ns.getPlayer().money
 
-  for (let i = 20; i >= 0; i--) {
-    const ram = Math.pow(2, i)
-    const cost = ns.getPurchasedServerCost(ram)
+	for (let i = 20; i >= 0; i--) {
+		const ram = Math.pow(2, i)
+		const cost = ns.getPurchasedServerCost(ram)
 
-    if (cost <= money) {
-      return ram
-    }
-  }
+		if (cost <= money) {
+			return ram
+		}
+	}
 }
