@@ -1,7 +1,7 @@
 import { GAME_CONSTANTS, PORT, SCRIPT, SETTINGS, stringify } from 'shared.js'
 
 const flagConfig = [
-	['run', false],
+	['no-run', false],
 	['killall', false],
 ]
 
@@ -26,7 +26,7 @@ export async function main(ns) {
 	ns.clearPort(PORT.SERVERS)
 	await ns.writePort(PORT.SERVERS, serversString)
 
-	if (flags.run) {
+	if (!flags['no-run']) {
 		ns.kill('producer.js', GAME_CONSTANTS.HOME)
 		ns.run('producer.js', 1)
 		ns.kill('consumer.js', GAME_CONSTANTS.HOME)

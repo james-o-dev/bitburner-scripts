@@ -5,6 +5,8 @@ export async function main(ns) {
 	ns.disableLog('ALL')
 	ns.tail('consumer.js')
 
+	ns.clearPort(PORT.QUEUE_RUNNING)
+
 	const usable = getServers(ns).filter(s => s.hasRootAccess && s.maxRam > 0).sort((a, b) => b.maxRam - a.maxRam)
 
 	while (true) {
@@ -17,7 +19,7 @@ export async function main(ns) {
 			let queued = readyQueue[i]
 
 			let {
-				server: target,
+				target,
 				script,
 				threads: reqThreads,
 			} = queued
@@ -43,7 +45,7 @@ export async function main(ns) {
 				const threadsAvailable = Math.floor((server.maxRam - ns.getServerUsedRam(server.name)) / scriptRam)
 
 				if (threadsAvailable === 0) continue
-				else if (threadsAvailable > reqThreads) threads = threadsAvailable - reqThreads
+				else if (threadsAvailable > reqThreads) threads = reqThreads
 				else threads = threadsAvailable
 
 				if (threads > 0) {
@@ -51,7 +53,7 @@ export async function main(ns) {
 					const pid = Math.random().toString()
 
 					ns.exec(script, server.name, threads, target, pid)
-					runningQueue.push({ pid, server: server.name, target })
+					runningQueue.push({ pid, server: server.name, target, threads, })
 
 					reqThreads = reqThreads - threads
 				}
@@ -68,11 +70,8 @@ export async function main(ns) {
 		await setQueue(ns, PORT.QUEUE_READY, readyQueue)
 
 		ns.clearLog()
-		ns.print('READY')
-		ns.print(stringify(readyQueue))
 		await setQueue(ns, PORT.QUEUE_RUNNING, runningQueue)
-		ns.print('RUNNING')
 		ns.print(stringify(runningQueue))
+		ns.print(`RUNNING: ${runningQueue.length}`)
 	}
-
 }

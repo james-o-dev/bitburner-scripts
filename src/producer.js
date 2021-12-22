@@ -5,25 +5,25 @@ export async function main(ns) {
 	ns.disableLog('ALL')
 	ns.tail('producer.js')
 
+	ns.clearPort(PORT.QUEUE_READY)
+	ns.clearPort(PORT.QUEUE_RUNNING)
+
 	while (true) {
 		await doPolling(ns)
 
 		const player = ns.getPlayer()
 
 		const readyQueue = getQueue(ns, PORT.QUEUE_READY)
+		const runningQueue = getQueue(ns, PORT.QUEUE_RUNNING)
 
-		// Get additional server details and sort by its value heuristic.
-		// In the while loop to get updated information.
+		let maxValue = 0
 		const targets = getServers(ns)
 			.filter(t => {
-				const runningQueue = getQueue(ns, PORT.QUEUE_RUNNING)
 
 				if (t.maxMoney <= 0) return false
 				if (!t.hasRootAccess) return false
 				if (t.name === GAME_CONSTANTS.HOME) return false
 				if (t.requiredHackingLevel > player.hacking) return false
-				if (readyQueue.find(rq => rq.server === t.name)) return false
-				if (runningQueue.find(rq => rq.server === t.name)) return false
 				if (ns.hackAnalyzeChance(t.name) === 0) return false
 
 				return true
@@ -34,6 +34,8 @@ export async function main(ns) {
 
 				let value = target.maxMoney * ns.hackAnalyzeChance(target.name) * ns.hackAnalyze(target.name)
 				value = value / (ns.getGrowTime(target.name) + ns.getHackTime(target.name) + ns.getWeakenTime(target.name))
+
+				if (value > maxValue) maxValue = value
 
 				const moneyAvailable = ns.getServerMoneyAvailable(target.name)
 				const moneyMinimum = target.maxMoney * SETTINGS.MONEY_THRESH
@@ -57,18 +59,27 @@ export async function main(ns) {
 				}
 
 				return {
-					server: target.name,
+					target: target.name,
 					script,
 					threads,
 					value,
 				}
 			})
-			.filter(t => t.value > 0)
+			.filter(nrq => {
+				if (nrq.value < (maxValue * SETTINGS.VALUE_THRESH)) return false
+				if (readyQueue.find(rq => rq.target === nrq.target)) return false
+				if (runningQueue.find(rq => rq.target === nrq.target)) return false
+				return true
+			})
 
-		const newReadyQueue = [...readyQueue, ...targets].sort((a, b) => b.value - a.value)
+		let newReadyQueue = [...readyQueue, ...targets]
+			.sort((a, b) => b.value - a.value)
+		// .filter((_, i) => !SETTINGS.MAX_TARGETS || (i < SETTINGS.MAX_TARGETS))
+
 		await setQueue(ns, PORT.QUEUE_READY, newReadyQueue)
 
 		ns.clearLog()
 		ns.print(stringify(readyQueue))
+		ns.print(`READY: ${readyQueue.length}`)
 	}
 }
