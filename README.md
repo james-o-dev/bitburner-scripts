@@ -10,7 +10,7 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 ## Getting Started
 
 * Copy scripts to your home (root directory)
-* `run start.js --run`
+* `run start.js`
 
 ## Usage
 
