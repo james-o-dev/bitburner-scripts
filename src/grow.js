@@ -4,9 +4,9 @@ import { getQueue, PORT, setQueue } from 'shared.js'
 export async function main(ns) {
 	const [ target, pid ] = ns.args
 
-	await ns.hack(target)
+	await ns.grow(target)
 
 	// Remove from running.
 	const running = getQueue(ns, PORT.QUEUE_RUNNING).filter(f => f.pid !== pid)
-	await setQueue(ns, port, running)
+	await setQueue(ns, PORT.QUEUE_RUNNING, running)
 }

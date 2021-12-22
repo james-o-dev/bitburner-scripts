@@ -27,9 +27,9 @@ export async function main(ns) {
 	await ns.writePort(PORT.SERVERS, serversString)
 
 	if (flags.run) {
-		ns.kill('producer.js')
+		ns.kill('producer.js', GAME_CONSTANTS.HOME)
 		ns.run('producer.js', 1)
-		ns.kill('consumer.js')
+		ns.kill('consumer.js', GAME_CONSTANTS.HOME)
 		ns.spawn('consumer.js', 1)
 	} else if (flags.killall) {
 		ns.run('killall.js', 1)

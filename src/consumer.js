@@ -11,10 +11,10 @@ export async function main(ns) {
 		await doPolling(ns)
 
 		let readyQueue = getQueue(ns, PORT.QUEUE_READY)
-		const runningQueue = getQueue(ns, PORT.QUEUE_RUNNING)
+		let runningQueue = getQueue(ns, PORT.QUEUE_RUNNING)
 
 		for (let i = 0; i < readyQueue.length; i++) {
-			const queued = readyQueue[i]
+			let queued = readyQueue[i]
 
 			let {
 				server: target,

@@ -8,5 +8,5 @@ export async function main(ns) {
 
 	// Remove from running.
 	const running = getQueue(ns, PORT.QUEUE_RUNNING).filter(f => f.pid !== pid)
-	await setQueue(ns, port, running)
+	await setQueue(ns, PORT.QUEUE_RUNNING, running)
 }

@@ -18,12 +18,13 @@ export async function main(ns) {
 			.filter(t => {
 				const runningQueue = getQueue(ns, PORT.QUEUE_RUNNING)
 
-				if (t.maxMoney < 0) return false
+				if (t.maxMoney <= 0) return false
 				if (!t.hasRootAccess) return false
-				if (t === GAME_CONSTANTS.HOME) return false
+				if (t.name === GAME_CONSTANTS.HOME) return false
 				if (t.requiredHackingLevel > player.hacking) return false
 				if (readyQueue.find(rq => rq.server === t.name)) return false
 				if (runningQueue.find(rq => rq.server === t.name)) return false
+				if (ns.hackAnalyzeChance(t.name) === 0) return false
 
 				return true
 			})
@@ -45,7 +46,7 @@ export async function main(ns) {
 				// Else if money is lower than money threshold, grow.
 				else if (moneyAvailable < moneyMinimum) {
 					script = SCRIPT.GROW
-					const growthDiff = 1 + ((target.maxMoney - moneyAvailable) / moneyAvailable)
+					const growthDiff = 1 + ((target.maxMoney - moneyAvailable) / target.maxMoney)
 					threads = Math.ceil(ns.growthAnalyze(target.name, growthDiff))
 				}
 				// Else hack.
