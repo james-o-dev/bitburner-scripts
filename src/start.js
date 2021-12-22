@@ -73,7 +73,7 @@ const nuke = (ns, server) => {
 }
 
 /** @param {NS} ns **/
-const getServerDetails = (ns, name, { reserveRam } = {}) => {
+const getServerDetails = (ns, name, { reserveRam = 0 } = {}) => {
 	const maxRam = ns.getServerMaxRam(name) - reserveRam
 	return {
 		hasRootAccess: ns.hasRootAccess(name),
