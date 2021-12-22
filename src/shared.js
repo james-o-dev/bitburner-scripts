@@ -1,33 +1,12 @@
-# BitBurner scripts
-
-Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820/Bitburner/) ([web version](https://danielyxie.github.io/bitburner/)).
-
-## Summary
-
-* "Pub + Sub" system: Involves two polling loops - one to "produce orders" and one to "consume orders".
-* Grow, hack, weak scripts are minimal - to allow maximum threads.
-
-## Getting Started
-
-* Copy scripts to your home (root directory)
-* `run start.js --run`
-
-## Usage
-
-### Adjust Settings
-
-* Edit the `SETTINGS` const in `shared.js`
-
-```js
 export const SETTINGS = {
 	/**
 	 * start.js + producer.js + killall.js
 	 * * (ignore consumer.js it does not run the same time as start.js and uses less ram)
-	 * 7.15 + 6.5 + 2.1 = 15.75
+	 * 7.15 + 6.5 + 2.1
 	 *
 	 * Override if needed to increase free ram.
 	 */
-	HOME_RESERVED_RAM: 15.75,
+	HOME_RESERVED_RAM: 7.15 + 6.5 + 2.1,
 	/**
 	 * Percentage of the max server money to say above; Will not take money if below this percentage
 	 * Increase if you have total threads to spare
@@ -69,32 +48,59 @@ export const SETTINGS = {
 	 */
 	VALUE_THRESH: 0,
 }
-```
 
-### Kill All Running Scripts
+export const PORT = {
+	SERVERS: 11,
+	QUEUE_READY: 12,
+	QUEUE_RUNNING: 13,
+}
 
-Use `run killall.js`; Requires `run start.js` first, at least once a game start-up.
+export const SCRIPT = {
+	GROW: 'grow.js',
+	HACK: 'hack.js',
+	SHARED: 'shared.js',
+	WEAKEN: 'weaken.js',
+}
+export const SCRIPT_RAM = {
+	GROW: 1.7,
+	HACK: 1.7,
+	WEAKEN: 1.75,
+}
+export const MAX_SCRIPT_RAM = 1.75
 
-This kills all running scripts on all servers, including home.
+export const GAME_CONSTANTS = {
+	HOME: 'home',
+	NULL_PORT: 'NULL PORT DATA',
+	WEAKEN_THREAD_ANALYZE: 0.05,
+}
 
-## Tips
+/** @param {NS} ns **/
+export function getServers(ns) {
+	const fromPort = getQueue(ns, PORT.SERVERS)
+	if (fromPort.length === 0) throw new Error('run start.js first')
+	return fromPort
+}
 
-* Running the full script requires at least 15.75GB ram (Or 13.65GB if you don't need to `run killall.js`)
-	* If you don't have enough, just run a smaller script in the beginning to get money to upgrade your home ram.
-		You may use `early-hack-template.script` from the [Bitburner docs](https://bitburner.readthedocs.io/en/latest/guidesandtips/gettingstartedguideforbeginnerprogrammers.html#editing-our-hacking-script)
-* My personal priority:
-	* Buy enough home ram to run the scripts - in order to accomodate 15.75GB ram
-	* Buy TOR router
-	* `buy` the port-opening programs as you can afford it
-	* But the Deeplink programs as you can afford it
-	* Buy QoL programs if you want
-	* Join factions and purchase augments needed
-	* Upgrade home ram up to a point (typically until over 1 TB)
-	* Upgrade home cpu
-	* Once augments get too expensive, install augments and start again.
+/** @param {NS} ns **/
+export function killall(ns) {
+	getServers(ns)
+		.filter(s => s.name !== GAME_CONSTANTS.HOME)
+		.forEach(({ name }) => ns.killall(name))
+}
 
-## To Do
+export const stringify = (obj) => JSON.stringify(obj, null, 4)
 
-* Comments and descriptions.
-* Improving "value" formula.
-* Investigate "batching" = do weaken, grow, hack in parallel.
+/** @param {NS} ns **/
+export const getQueue = (ns, port) => {
+	let data = ns.peek(port)
+	if (data === GAME_CONSTANTS.NULL_PORT) data = '[]'
+	return JSON.parse(data)
+}
+
+/** @param {NS} ns **/
+export const setQueue = (ns, port, queue = '[]') => {
+	ns.clearPort(port)
+	return ns.writePort(port, stringify(queue))
+}
+
+export const doPolling = async (ns) => ns.sleep(Math.random() * (SETTINGS.POLL_MAX - SETTINGS.POLL_MIN) + SETTINGS.POLL_MIN)
