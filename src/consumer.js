@@ -3,16 +3,19 @@ import { doPolling, getQueue, getServers, PORT, setQueue, SCRIPT, SCRIPT_RAM, st
 /** @param {NS} ns **/
 export async function main(ns) {
 	ns.disableLog('ALL')
+	ns.tail('consumer.js')
 
-	const usable = getServers(ns).filter(s => s.hasRootAccess).sort((a, b) => b.maxRam - a.maxRam)
+	const usable = getServers(ns).filter(s => s.hasRootAccess && s.maxRam > 0).sort((a, b) => b.maxRam - a.maxRam)
 
 	while (true) {
 		await doPolling(ns)
 
 		let readyQueue = getQueue(ns, PORT.QUEUE_READY)
-		let runningQueue = getQueue(ns, PORT.QUEUE_RUNNING)
+		const runningQueue = getQueue(ns, PORT.QUEUE_RUNNING)
 
-		for (let queued of readyQueue) {
+		for (let i = 0; i < readyQueue.length; i++) {
+			const queued = readyQueue[i]
+
 			let {
 				server: target,
 				script,
@@ -50,21 +53,21 @@ export async function main(ns) {
 					ns.exec(script, server.name, threads, target, pid)
 					runningQueue.push({ pid, server: server.name, target })
 
-					reqThreads -= threads
+					reqThreads = reqThreads - threads
 				}
 			}
-
 			if (reqThreads <= 0) {
-				readyQueue.shift()
+				readyQueue[i] = null
 			} else {
 				queued.threads = reqThreads
-				readyQueue[0] = queued
+				readyQueue[i] = queued
 			}
-
 		}
 
-		ns.clearLog()
+		readyQueue = readyQueue.filter(rq => Boolean(rq)).sort((a, b) => b.value - a.value)
 		await setQueue(ns, PORT.QUEUE_READY, readyQueue)
+
+		ns.clearLog()
 		ns.print('READY')
 		ns.print(stringify(readyQueue))
 		await setQueue(ns, PORT.QUEUE_RUNNING, runningQueue)
