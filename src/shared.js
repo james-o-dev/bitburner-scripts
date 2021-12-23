@@ -106,3 +106,23 @@ export const setQueue = (ns, port, queue = '[]') => {
 }
 
 export const doPolling = async (ns) => ns.sleep(Math.random() * (SETTINGS.POLL_MAX - SETTINGS.POLL_MIN) + SETTINGS.POLL_MIN)
+
+export const getScriptRam = (script) => {
+    let scriptRam
+
+    switch (script) {
+        case SCRIPT.GROW:
+            scriptRam = SCRIPT_RAM.GROW
+            break;
+
+        case SCRIPT.HACK:
+            scriptRam = SCRIPT_RAM.HACK
+            break;
+
+        case SCRIPT.WEAKEN:
+            scriptRam = SCRIPT_RAM.WEAKEN
+            break;
+    }
+
+    return scriptRam
+}
