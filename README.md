@@ -4,8 +4,9 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 
 ## Summary
 
-* "Pub + Sub" system: Involves two polling loops - one to "produce orders" and one to "consume orders".
+* Continuously create "WGWH" (Weaken, Grow, Weaken, Hack) script sequence, targeting only the most profitable server, based on a metric.
 * Grow, hack, weak scripts are minimal - to allow maximum threads.
+* Calculate polling sleep time-out of each script, such that they all run concurrently but finish in close sequence with one another.
 
 ## Getting Started
 
@@ -28,15 +29,11 @@ export const SETTINGS = {
      */
     HOME_RESERVED_RAM: 10.2 + 2.1, // + more
     /**
-     * Percentage of the max server money to stay above; Will not take money if below this percentage
-     * Increase if you have total threads to spare
-     * Decrease if total threads are at capacity
-     *
-     * It is more efficient to have this higher, so we do not take too much money and increase the server security level too much.
-     *
-     * Note: It is better to have some total threads spare, in order to respond to higher-valued targets, rather than them being used for lower-valued targets
+     * Percentage of the max server money to stay above; Will not take money if below this percentage.
+		 * Increase: If you do not have enough threads, for a full WGWH.
+     * Decrease: If you have threads to spare.
      */
-    MONEY_THRESH: 0.9,
+    MONEY_THRESH: 0.5,
     /**
      * Duration of polling, in milliseconds.
      */

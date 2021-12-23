@@ -7,15 +7,11 @@ export const SETTINGS = {
      */
     HOME_RESERVED_RAM: 10.2 + 2.1, // + more
     /**
-     * Percentage of the max server money to stay above; Will not take money if below this percentage
-     * Increase if you have total threads to spare
-     * Decrease if total threads are at capacity
-     *
-     * It is more efficient to have this higher, so we do not take too much money and increase the server security level too much.
-     *
-     * Note: It is better to have some total threads spare, in order to respond to higher-valued targets, rather than them being used for lower-valued targets
+     * Percentage of the max server money to stay above; Will not take money if below this percentage.
+		 * Increase: If you do not have enough threads, for a full WGWH.
+     * Decrease: If you have threads to spare.
      */
-    MONEY_THRESH: 0.9,
+    MONEY_THRESH: 0.5,
     /**
      * Duration of polling, in milliseconds.
      */
