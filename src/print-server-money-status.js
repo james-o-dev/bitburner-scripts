@@ -1,4 +1,4 @@
-import { GAME_CONSTANTS, getServers, stringify } from 'shared.js'
+import { doPolling, GAME_CONSTANTS, getServers, stringify } from 'shared.js'
 
 const flagsConfig = [
     /**
@@ -7,12 +7,37 @@ const flagsConfig = [
      * ap: Descending order by available percentage server money
      */
     ['sort', 'm'],
+    /**
+     * Pass this flag to only run this once and print it to the terminal.
+     * Default this is false and will continuously run and update it's logs.
+     */
+    ['once', false],
 ]
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    const flags = ns.flags(flagsConfig)
-    const sort = flags.sort
+    ns.disableLog('ALL')
+
+    const once = ns.flags(flagsConfig).once
+
+    if (!once) ns.tail('print-server-money-status.js')
+
+    while (true) {
+        const printServers = getPrintServers(ns)
+        ns.clearLog()
+        ns.print(stringify(printServers))
+
+        if (once) {
+            ns.tprint(stringify(printServers))
+            return
+        }
+        await doPolling(ns)
+    }
+}
+
+/** @param {NS} ns **/
+const getPrintServers = (ns) => {
+    const sort = ns.flags(flagsConfig).sort
 
     let printServers = getServers(ns)
         .filter(s => s.maxMoney && s.hasRootAccess && s.name !== GAME_CONSTANTS.HOME)
@@ -40,7 +65,7 @@ export async function main(ns) {
             break;
     }
 
-    printServers = printServers.map(s => {
+    return printServers.map(s => {
         return {
             name: s.name,
             max: ns.nFormat(s.max, '$0,0'),
@@ -48,6 +73,4 @@ export async function main(ns) {
             availablePercent: `${s.availablePercent}%`
         }
     })
-
-    ns.tprint(stringify(printServers))
 }
