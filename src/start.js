@@ -29,10 +29,8 @@ export async function main(ns) {
 	killall(ns)
 
 	if (!flags['no-run']) {
-		ns.kill('producer.js', GAME_CONSTANTS.HOME)
-		ns.run('producer.js', 1)
-		ns.kill('consumer.js', GAME_CONSTANTS.HOME)
-		ns.spawn('consumer.js', 1)
+		ns.kill('run.js', GAME_CONSTANTS.HOME)
+		ns.run('run.js', 1)
 	}
 }
 

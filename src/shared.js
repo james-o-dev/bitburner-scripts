@@ -18,15 +18,9 @@ export const SETTINGS = {
      */
     MONEY_THRESH: 0.9,
     /**
-     * Maximum duration of polling, in milliseconds.
-     * Polling time is random between the min and the max.
+     * Duration of polling, in milliseconds.
      */
-    POLL_MAX: 6000,
-    /**
-     * Minimum duration of polling, in milliseconds.
-     * Polling time is random between the min and the max.
-     */
-    POLL_MIN: 1000,
+    POLL: 2000,
     /**
      * Leeway security level.
      * It will always try to hack to minimum security; However, this setting allows it to not always constantly use weaken.
