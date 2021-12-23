@@ -30,7 +30,7 @@ export async function main(ns) {
 
 	if (!flags['no-run']) {
 		ns.kill('run.js', GAME_CONSTANTS.HOME)
-		ns.run('run.js', 1)
+		ns.spawn('run.js', 1)
 	}
 }
 

@@ -20,62 +20,37 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 
 ```js
 export const SETTINGS = {
-	/**
-	 * mem start.js + producer.js + killall.js
-	 * 7.15 + 8.5 + 2.1
-	 * (ignore consumer.js it does not run the same time as start.js and uses less ram)
-	 *
-	 * Override if needed to increase free ram.
-	 */
-	HOME_RESERVED_RAM: 7.15 + 8.5 + 2.1, // + more
-	/**
-	 * Percentage of the max server money to stay above; Will not take money if below this percentage
-	 * Increase if you have total threads to spare
-	 * Decrease if total threads are at capacity
-	 *
-	 * It is more efficient to have this higher, so we do not take too much money and increase the server security level too much.
-	 *
-	 * Note: It is better to have some total threads spare, in order to respond to higher-valued targets, rather than them being used for lower-valued targets
-	 */
-	MONEY_THRESH: 0.75,
-	/**
-	 * Maximum duration of polling, in milliseconds.
-	 * Polling time is random between the min and the max.
-	 */
-	POLL_MAX: 6000,
-	/**
-	 * Minimum duration of polling, in milliseconds.
-	 * Polling time is random between the min and the max.
-	 */
-	POLL_MIN: 1000,
-	/**
-	 * Leeway security level.
-	 * It will always try to hack to minimum security; However, this setting allows it to not always constantly use weaken.
-	 * Increase if you need to free more ram/threads, at the expense of hack efficiency
-	 */
-	SECURITY_THRESH: 1,
-	/**
-	 * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
-	 */
-	TOAST_DURATION: 4000,
-	/**
-	 * It will only target those with the top % percentage of value; Range 0 to 1.
-	 * i.e. If set to 1 - only the top most valuable target will be hacked
-	 * i.e. If set to 0 - all (non-zero value) targets will be hacked
-	 *
-	 * Adjust this depending on your progression:
-	 * Higher value if you do not have ram/threads to spare (e.g. at the beginning of the game or after augment)
-	 * Gradually lower this value to 0 as you have more threads you have spare, to allow more targets to be hacked.
-	 *
-	 * Note: It is better to have some total threads spare, in order to respond to higher value targets
-	 */
-	VALUE_THRESH: 0,
+    /**
+     * mem run.js + mem killall.js
+     * 10.2 + 2.1
+     *
+     * Override if needed to increase free ram.
+     */
+    HOME_RESERVED_RAM: 10.2 + 2.1, // + more
+    /**
+     * Percentage of the max server money to stay above; Will not take money if below this percentage
+     * Increase if you have total threads to spare
+     * Decrease if total threads are at capacity
+     *
+     * It is more efficient to have this higher, so we do not take too much money and increase the server security level too much.
+     *
+     * Note: It is better to have some total threads spare, in order to respond to higher-valued targets, rather than them being used for lower-valued targets
+     */
+    MONEY_THRESH: 0.9,
+    /**
+     * Duration of polling, in milliseconds.
+     */
+    POLL: 2000,
+    /**
+     * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
+     */
+    TOAST_DURATION: 4000,
 }
 ```
 
 ### Kill All Running Scripts
 
-Use `run killall.js`; Requires `run start.js` first, at least once a game start-up.
+Use `run killall.js`; Requires `run start.js` first, at least once per game start-up.
 
 This kills all running scripts on all servers, including home.
 
@@ -87,12 +62,12 @@ Necessary if you have purchased new servers or port-opening tools.
 
 ## Tips
 
-* Running the full script requires at least 17.75GB ram (Or 15.65GB if you don't need to `run killall.js`)
-	* If you don't have enough, just run a smaller script in the beginning to get money to upgrade your home ram.
-		You may use `early-hack-template.script` from the [Bitburner docs](https://bitburner.readthedocs.io/en/latest/guidesandtips/gettingstartedguideforbeginnerprogrammers.html#editing-our-hacking-script)
+* Running the full script requires at least 10.2GB ram (Extra 2.1GB if you want to `run killall.js`)
+	* If you don't have enough, just run a smaller script in the beginning to get money to upgrade your home ram to this amount.
+		You may use `early-hack-template.script` from the [Bitburner docs](https://bitburner.readthedocs.io/en/latest/guidesandtips/gettingstartedguideforbeginnerprogrammers.html#editing-our-hacking-script), or another more efficent script in the mean-time
 * My personal priority:
-	* Buy enough home ram to run the scripts - in order to accomodate the 17.75GB ram needed to run all the scripts.
-	* Buy TOR router.
+	* Buy enough home ram to run all the scripts
+	* `buy` TOR router.
 	* `buy` the port-opening programs as you can afford it.
 	* But the Deeplink programs as you can afford it.
 	* Buy QoL programs if you want.
@@ -106,5 +81,5 @@ Necessary if you have purchased new servers or port-opening tools.
 ## To Do
 
 * Comments and descriptions.
-* Improving "value" formula.
-* Investigate "batching" = do weaken, grow, hack in parallel.
+* Investigate improving server target value/priority formula, if .
+* Investigate improving polling and timing.

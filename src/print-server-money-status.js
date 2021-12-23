@@ -1,4 +1,4 @@
-import { doPolling, GAME_CONSTANTS, getServers, stringify } from 'shared.js'
+import { GAME_CONSTANTS, getServers, SETTINGS, stringify } from 'shared.js'
 
 const flagsConfig = [
     /**
@@ -31,7 +31,7 @@ export async function main(ns) {
         } else {
             ns.clearLog()
             ns.print(stringify(printServers))
-            await doPolling(ns)
+            await ns.sleep(SETTINGS.POLL)
         }
     }
 }

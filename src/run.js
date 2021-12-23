@@ -2,8 +2,7 @@ import { GAME_CONSTANTS, getScriptRam, getServers, PORT, SCRIPT, setQueue, SETTI
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    ns.disableLog('ALL')
-    ns.tail('run.js')
+    // ns.disableLog('ALL')
 
     const lastKnown = {
         // serverName: {
