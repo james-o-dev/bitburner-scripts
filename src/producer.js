@@ -31,7 +31,7 @@ export async function main(ns) {
             .map(target => {
 
                 let value = target.maxMoney * ns.hackAnalyzeChance(target.name) * ns.hackAnalyze(target.name)
-                // value = value / (ns.getGrowTime(target.name) + ns.getHackTime(target.name) + ns.getWeakenTime(target.name))
+                value = value / (ns.getGrowTime(target.name) + ns.getHackTime(target.name) + ns.getWeakenTime(target.name))
 
                 if (value > maxValue) maxValue = value
 
@@ -68,7 +68,7 @@ export async function main(ns) {
                     bundle.scripts.push(growThreads)
                     bundle.scripts.push(weakenThreads2)
 
-                } else if (ns.getServerSecurityLevel(target.name) > target.minSecurityLevel) {
+                } else if (ns.getServerSecurityLevel(target.name) > target.minSecurityLevel + SETTINGS.SETTINGS) {
                     // Else if less than min security - reduce to min security, with W
 
                     // Weaken to min.
