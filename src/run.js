@@ -46,7 +46,7 @@ export async function main(ns) {
         let lastKnownWorking = {}
 
         if (lastKnown[target.name]) {
-            lastKnownWorking = lastKnown[target.name]
+            lastKnownWorking = {...lastKnown[target.name]}
         } else {
             lastKnownWorking = {
                 securityLevel: ns.getServerSecurityLevel(target.name),
@@ -55,7 +55,7 @@ export async function main(ns) {
         }
 
         // Do WGWH.
-        const weaken1 = getWeaken(target, lastKnownWorking, ns)
+        const weaken1 = getWeaken(target, lastKnownWorking)
         lastKnownWorking.securityLevel = target.minSecurityLevel
 
         const grow = getGrow(target, lastKnownWorking, ns)
