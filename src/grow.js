@@ -4,7 +4,10 @@ import { getQueue, PORT, setQueue } from 'shared.js'
 export async function main(ns) {
 	const [ target, poll, last ] = ns.args
 
-	await ns.sleep(poll)
+	if (poll) {
+		ns.print(`${new Date(Date.now() + poll).toLocaleString()} (${ns.tFormat(poll)})`)
+		await ns.sleep(poll)
+	}
 
 	await ns.grow(target)
 

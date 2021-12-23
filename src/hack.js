@@ -4,7 +4,10 @@ import { getQueue, PORT, setQueue, SETTINGS } from 'shared.js'
 export async function main(ns) {
 	const [ target, poll, last ] = ns.args
 
-	await ns.sleep(poll)
+	if (poll) {
+		ns.print(`${new Date(Date.now() + poll).toLocaleString()} (${ns.tFormat(poll)})`)
+		await ns.sleep(poll)
+	}
 
 	const money = await ns.hack(target)
 

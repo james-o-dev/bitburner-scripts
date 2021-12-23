@@ -29,88 +29,50 @@ export async function main(ns) {
                 return true
             })
             .map(target => {
-
                 let value = target.maxMoney * ns.hackAnalyzeChance(target.name) * ns.hackAnalyze(target.name) * target.serverGrowth
                 value = value / target.minSecurityLevel
                 value = value / (ns.getGrowTime(target.name) + ns.getHackTime(target.name) + ns.getWeakenTime(target.name))
 
                 if (value > maxValue) maxValue = value
 
-                const bundle = {
+                // Do a cycle for WGWH.
+
+                // Weaken to min.
+                const weakenThreads1 = getWeakenThreads(ns, target, false)
+
+                // Grow to max.
+                const growThreads = getGrowThreads(ns, target)
+
+                // Weaken to min.
+                const weakenThreads2 = getWeakenThreads(ns, target, false, growThreads.securityIncrease)
+
+                // Hack to threshold.
+                const hackThreads = getHackThreads(ns, target, true)
+
+                // Get polling differences, so that they finish close together.
+                const polls = getPollDifferences([
+                    ns.getWeakenTime(target.name),
+                    ns.getGrowTime(target.name),
+                    ns.getWeakenTime(target.name),
+                    ns.getHackTime(target.name),
+                ])
+                weakenThreads1.poll = polls[0]
+                growThreads.poll = polls[1]
+                weakenThreads2.poll = polls[2]
+                hackThreads.poll = polls[3]
+
+                const scripts = [
+                    weakenThreads1,
+                    growThreads,
+                    weakenThreads2,
+                    hackThreads,
+                ]
+
+                return {
+                    scripts,
                     target: target.name,
                     value,
-                    scripts: []
                 }
-
-                if (ns.getServerMoneyAvailable(target.name) < target.maxMoney) {
-                    // If less than max money - get to max money, with WGW.
-
-                    // Weaken to min.
-                    const weakenThreads1 = getWeakenThreads(ns, target)
-
-                    // Grow to max.
-                    const growThreads = getGrowThreads(ns, target)
-
-                    // Weaken to min.
-                    const weakenThreads2 = getWeakenThreads(ns, target, true, growThreads.securityIncrease)
-
-                    // Get polling differences, so that they finish close together.
-                    const polls = getPollDifferences([
-                        ns.getWeakenTime(target.name),
-                        ns.getGrowTime(target.name),
-                        ns.getWeakenTime(target.name),
-                    ])
-                    weakenThreads1.poll = polls[0]
-                    growThreads.poll = polls[1]
-                    weakenThreads2.poll = polls[2]
-
-                    // Add to the bundle.
-                    bundle.scripts.push(weakenThreads1)
-                    bundle.scripts.push(growThreads)
-                    bundle.scripts.push(weakenThreads2)
-
-                } else if (ns.getServerSecurityLevel(target.name) > target.minSecurityLevel + SETTINGS.SETTINGS) {
-                    // Else if less than min security - reduce to min security, with W
-
-                    // Weaken to min.
-                    const weakenThreads = getWeakenThreads(ns, target, true)
-                    bundle.scripts.push(weakenThreads)
-
-                } else {
-                    // Do a cycle for HWGW.
-
-                    // Hack to threshold.
-                    const hackThreads = getHackThreads(ns, target)
-
-                    // Weaken to min.
-                    const weakenThreads1 = getWeakenThreads(ns, target, false, hackThreads.securityIncrease)
-
-                    // Grow to max.
-                    const growThreads = getGrowThreads(ns, target)
-
-                    // Weaken to min.
-                    const weakenThreads2 = getWeakenThreads(ns, target, true, growThreads.securityIncrease)
-
-                    // Get polling differences, so that they finish close together.
-                    const polls = getPollDifferences([
-                        ns.getHackTime(target.name),
-                        ns.getWeakenTime(target.name),
-                        ns.getGrowTime(target.name),
-                        ns.getWeakenTime(target.name),
-                    ])
-                    hackThreads.poll = polls[0]
-                    weakenThreads1.poll = polls[1]
-                    growThreads.poll = polls[2]
-                    weakenThreads2.poll = polls[3]
-
-                    // Add to the bundle.
-                    bundle.scripts.push(hackThreads)
-                    bundle.scripts.push(weakenThreads1)
-                    bundle.scripts.push(growThreads)
-                    bundle.scripts.push(weakenThreads2)
-                }
-
-                return bundle
             })
             .filter(nrq => {
                 if (nrq.value < (maxValue * SETTINGS.VALUE_THRESH)) return false
@@ -168,8 +130,7 @@ const getWeakenThreads = (ns, target, last = false, securityIncrease = 0, ) => {
 const getHackThreads = (ns, target, last = false) => {
     const script = SCRIPT.HACK
     const moneyMinimum = target.maxMoney * SETTINGS.MONEY_THRESH
-    const moneyAvailable = ns.getServerMoneyAvailable(target.name)
-    const moneyDiff = moneyAvailable - moneyMinimum
+    const moneyDiff = target.maxMoney - moneyMinimum
     const threads = Math.ceil(ns.hackAnalyzeThreads(target.name, moneyDiff))
     const securityIncrease = ns.hackAnalyzeSecurity(threads)
 
@@ -183,7 +144,7 @@ const getHackThreads = (ns, target, last = false) => {
 }
 
 const getPollDifferences = (polls) => {
-    const delay = 2000
+    const staggerDelay = 3000
     const maxPoll = polls.reduce((m, p) => m < p ? p : m, 0)
-    return polls.map((p, i) => maxPoll - p + (i * delay))
+    return polls.map((p, i) => maxPoll - p + (i * staggerDelay))
 }
