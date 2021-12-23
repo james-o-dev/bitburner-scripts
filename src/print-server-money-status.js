@@ -2,11 +2,13 @@ import { doPolling, GAME_CONSTANTS, getServers, stringify } from 'shared.js'
 
 const flagsConfig = [
     /**
-     * m: Descending order by maximum server money
-     * a: Descending order by available server money
-     * ap: Descending order by available percentage server money
+     * sort-m: (Default) Descending order by maximum server money
+     * sort-a: Descending order by available server money
+     * sort-ap: Descending order by available percentage server money
      */
-    ['sort', 'm'],
+    ['sort-m', false],
+    ['sort-a', false],
+    ['sort-ap', false],
     /**
      * Pass this flag to only run this once and print it to the terminal.
      * Default this is false and will continuously run and update it's logs.
@@ -17,53 +19,48 @@ const flagsConfig = [
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL')
-
-    const once = ns.flags(flagsConfig).once
-
-    if (!once) ns.tail('print-server-money-status.js')
+    ns.tail('print-server-money-status.js')
 
     while (true) {
         const printServers = getPrintServers(ns)
-        ns.clearLog()
-        ns.print(stringify(printServers))
+        const flags = ns.flags(flagsConfig)
 
-        if (once) {
+        if (flags.once) {
             ns.tprint(stringify(printServers))
             return
+        } else {
+            ns.clearLog()
+            ns.print(stringify(printServers))
+            await doPolling(ns)
         }
-        await doPolling(ns)
     }
 }
 
 /** @param {NS} ns **/
 const getPrintServers = (ns) => {
-    const sort = ns.flags(flagsConfig).sort
+    const flags = ns.flags(flagsConfig)
 
     let printServers = getServers(ns)
-        .filter(s => s.maxMoney && s.hasRootAccess && s.name !== GAME_CONSTANTS.HOME)
-        .map(s => {
+        .filter(t => {
+            if (t.maxMoney <= 0) return false
+            if (!t.hasRootAccess) return false
+            if (t.name === GAME_CONSTANTS.HOME) return false
+            if (t.requiredHackingLevel > ns.getPlayer().hacking) return false
+            if (ns.hackAnalyzeChance(t.name) === 0) return false
 
-            const max = ns.getServerMaxMoney(s.name)
+            return true
+        })
+        .map(s => {
+            const max = s.maxMoney
             const available = ns.getServerMoneyAvailable(s.name)
             const availablePercent = Math.round((available / max) * 100)
 
             return { name: s.name, max, available, availablePercent }
         })
 
-    switch (sort) {
-        case 'a':
-            printServers = printServers.sort((a, b) => b.max - a.max)
-            break;
-
-        case 'ap':
-            printServers = printServers.sort((a, b) => b.availablePercent - a.availablePercent)
-            break;
-
-        case 'm':
-        default:
-            printServers = printServers.sort((a, b) => b.max - a.max)
-            break;
-    }
+    if (flags['sort-a']) printServers = printServers.sort((a, b) => b.available - a.available)
+    else if (flags['sort-ap']) printServers = printServers.sort((a, b) => b.availablePercent - a.availablePercent)
+    else printServers = printServers.sort((a, b) => b.max - a.max)
 
     return printServers.map(s => {
         return {
