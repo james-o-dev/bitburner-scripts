@@ -46,7 +46,7 @@ export async function main(ns) {
         let lastKnownWorking = {}
 
         if (lastKnown[target.name]) {
-            lastKnownWorking = { ...lastKnown[target.name] }
+            lastKnownWorking = lastKnown[target.name]
         } else {
             lastKnownWorking = {
                 securityLevel: ns.getServerSecurityLevel(target.name),
@@ -153,7 +153,7 @@ const getHack = (target, ns) => {
     const script = SCRIPT.HACK
     const moneyMinimum = target.maxMoney * SETTINGS.MONEY_THRESH
     const hackDiff = target.maxMoney - moneyMinimum
-    const threads = Math.ceil(ns.hackAnalyzeThreads(target.name, hackDiff))
+    const threads = Math.floor(ns.hackAnalyzeThreads(target.name, hackDiff))
     const securityIncrease = ns.hackAnalyzeSecurity(threads)
 
     return {
