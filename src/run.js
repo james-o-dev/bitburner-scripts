@@ -44,7 +44,7 @@ export async function main(ns) {
                     t.value = value
                     return t
                 })
-                .reduce((t, ts) => ts.value > t.value ? ts : t, targets[0])
+                .reduce((t, ts) => !t || (ts.value > t.value) ? ts : t, null)
         }
 
         // When the full WGWH is successful, set this as the next lastKnown values for the next time.
