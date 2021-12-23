@@ -16,6 +16,11 @@ export const SETTINGS = {
      * Duration of polling, in milliseconds.
      */
     POLL: 2000,
+		/**
+		 * Target this specific server;
+		 * By default, it will target the most profitable server, based on a metric.
+		 */
+		SPECIFIC_TARGET: '',
     /**
      * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
      */

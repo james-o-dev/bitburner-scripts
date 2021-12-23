@@ -19,28 +19,34 @@ export async function main(ns) {
 
         const player = ns.getPlayer()
 
-        const targets = getServers(ns)
-            .filter(t => {
+        let target
 
-                if (t.maxMoney <= 0) return false
-                if (!t.hasRootAccess) return false
-                if (t.name === GAME_CONSTANTS.HOME) return false
-                if (t.requiredHackingLevel > player.hacking) return false
-                if (ns.hackAnalyzeChance(t.name) === 0) return false
+        if (SETTINGS.SPECIFIC_TARGET) {
+            // Configured to target this specific server.
+            target = SETTINGS.SPECIFIC_TARGET
+        } else {
+            // Get the profitable server, based on the above metric.
+            target = getServers(ns)
+                .filter(t => {
+                    if (t.maxMoney <= 0) return false
+                    if (!t.hasRootAccess) return false
+                    if (t.name === GAME_CONSTANTS.HOME) return false
+                    if (t.requiredHackingLevel > player.hacking) return false
+                    if (ns.hackAnalyzeChance(t.name) === 0) return false
 
-                return true
-            })
-            .map(t => {
-                let value = t.maxMoney * ns.hackAnalyzeChance(t.name) * ns.hackAnalyze(t.name) * t.serverGrowth
-                value = value / t.minSecurityLevel
-                // value = value / (ns.getGrowTime(target.name) + ns.getHackTime(target.name) + ns.getWeakenTime(target.name))
+                    return true
+                })
+                .map(t => {
+                    let value = t.maxMoney * ns.hackAnalyzeChance(t.name) * ns.hackAnalyze(t.name) * t.serverGrowth
+                    value = value / t.minSecurityLevel
+                    // value = value / (ns.getGrowTime(target.name) + ns.getHackTime(target.name) + ns.getWeakenTime(target.name))
 
-                t.value = value
-                return t
-            })
+                    t.value = value
+                    return t
+                })
+                .reduce((t, ts) => ts.value > t.value ? ts : t, targets[0])
+        }
 
-        // Get the profitable server, based on the above metric.
-        const target = targets.reduce((t, ts) => ts.value > t.value ? ts : t, targets[0])
 
         // When the full WGWH is successful, set this as the next lastKnown values for the next time.
         let lastKnownWorking = {}
