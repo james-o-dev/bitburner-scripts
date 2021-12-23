@@ -8,7 +8,7 @@ export const SETTINGS = {
     HOME_RESERVED_RAM: 10.2 + 2.1, // + more
     /**
      * Percentage of the max server money to stay above; Will not take money if below this percentage.
-		 * Increase: If you do not have enough threads, for a full WGWH.
+     * Increase: If you do not have enough threads, for a full WGWH.
      * Decrease: If you have threads to spare.
      */
     MONEY_THRESH: 0.5,
@@ -16,11 +16,11 @@ export const SETTINGS = {
      * Duration of polling, in milliseconds.
      */
     POLL: 2000,
-		/**
-		 * Target this specific server;
-		 * By default, it will target the most profitable server, based on a metric.
-		 */
-		SPECIFIC_TARGET: '',
+    /**
+     * Target this specific server;
+     * By default, it will target the most profitable server, based on a metric.
+     */
+    SPECIFIC_TARGET: '',
     /**
      * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
      */
@@ -96,4 +96,18 @@ export const getScriptRam = (script) => {
     }
 
     return scriptRam
+}
+
+/** @param {NS} ns **/
+export const getScriptTime = (ns, script, server) => {
+    switch (script) {
+        case SCRIPT.GROW:
+            return ns.getGrowTime(server)
+
+        case SCRIPT.HACK:
+            return ns.getHackTime(server)
+
+        case SCRIPT.WEAKEN:
+            return ns.getWeakenTime(server)
+    }
 }

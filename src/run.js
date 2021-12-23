@@ -1,4 +1,4 @@
-import { GAME_CONSTANTS, getScriptRam, getServers, PORT, SCRIPT, setQueue, SETTINGS, stringify } from 'shared.js'
+import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, SCRIPT, SETTINGS } from 'shared.js'
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -47,12 +47,11 @@ export async function main(ns) {
                 .reduce((t, ts) => ts.value > t.value ? ts : t, targets[0])
         }
 
-
         // When the full WGWH is successful, set this as the next lastKnown values for the next time.
         let lastKnownWorking = {}
 
         if (lastKnown[target.name]) {
-            lastKnownWorking = {...lastKnown[target.name]}
+            lastKnownWorking = { ...lastKnown[target.name] }
         } else {
             lastKnownWorking = {
                 securityLevel: ns.getServerSecurityLevel(target.name),
@@ -75,18 +74,13 @@ export async function main(ns) {
         lastKnownWorking.moneyAvailable = target.maxMoney * SETTINGS.MONEY_THRESH
         lastKnownWorking.securityLevel += hack.securityIncrease
 
-        const pollDiffs = getPollDifferences([
-            ns.getWeakenTime(target.name),
-            ns.getGrowTime(target.name),
-            ns.getWeakenTime(target.name),
-            ns.getHackTime(target.name),
-        ])
-        weaken1.poll = pollDiffs[0]
-        grow.poll = pollDiffs[1]
-        weaken2.poll = pollDiffs[2]
-        hack.poll = pollDiffs[3]
+        let scripts = [weaken1, grow, weaken2, hack].filter(s => s.threads > 0)
+				const polls = getPollDifferences(scripts.map(s => getScriptTime(ns, s.script, target.name)))
+				scripts = scripts.map((s, i) => {
+					s.poll = polls[i]
+					return s
+				})
 
-        const scripts = [weaken1, grow, weaken2, hack]
         let canExec = true
         const execServers = []
         for (let script of scripts) {
@@ -115,11 +109,11 @@ export async function main(ns) {
         if (canExec) {
             for (let i = 0; i < execServers.length; i++) {
                 const element = execServers[i]
-                const random = Math.random() // Add a random number so the running script is unique
+                const random = Math.random() // Add a random number so the running script is unique.
                 ns.exec(element.script, element.server, element.threads, target.name, element.poll, random)
             }
 
-            lastKnown[target.name] = lastKnownWorking
+            lastKnown[target.name] = { ...lastKnownWorking }
         }
 
         poll = SETTINGS.POLL * (scripts.length + 1)
