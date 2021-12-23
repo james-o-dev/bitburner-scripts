@@ -1,12 +1,12 @@
 export const SETTINGS = {
     /**
      * mem start.js + producer.js + killall.js
-     * 7.15 + 6.5 + 2.1
+     * 7.15 + 8.5 + 2.1
      * (ignore consumer.js it does not run the same time as start.js and uses less ram)
      *
      * Override if needed to increase free ram.
      */
-    HOME_RESERVED_RAM: 7.15 + 6.5 + 2.1, // + more
+    HOME_RESERVED_RAM: 7.15 + 8.5 + 2.1, // + more
     /**
      * Percentage of the max server money to stay above; Will not take money if below this percentage
      * Increase if you have total threads to spare
@@ -16,7 +16,7 @@ export const SETTINGS = {
      *
      * Note: It is better to have some total threads spare, in order to respond to higher-valued targets, rather than them being used for lower-valued targets
      */
-    MONEY_THRESH: 0.75,
+    MONEY_THRESH: 0.9,
     /**
      * Maximum duration of polling, in milliseconds.
      * Polling time is random between the min and the max.
@@ -32,7 +32,7 @@ export const SETTINGS = {
      * It will always try to hack to minimum security; However, this setting allows it to not always constantly use weaken.
      * Increase if you need to free more ram/threads, at the expense of hack efficiency
      */
-    SECURITY_THRESH: 1,
+    SECURITY_THRESH: 2,
     /**
      * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
      */

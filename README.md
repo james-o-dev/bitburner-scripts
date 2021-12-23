@@ -22,12 +22,12 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 export const SETTINGS = {
 	/**
 	 * mem start.js + producer.js + killall.js
-	 * 7.15 + 6.5 + 2.1
+	 * 7.15 + 8.5 + 2.1
 	 * (ignore consumer.js it does not run the same time as start.js and uses less ram)
 	 *
 	 * Override if needed to increase free ram.
 	 */
-	HOME_RESERVED_RAM: 7.15 + 6.5 + 2.1, // + more
+	HOME_RESERVED_RAM: 7.15 + 8.5 + 2.1, // + more
 	/**
 	 * Percentage of the max server money to stay above; Will not take money if below this percentage
 	 * Increase if you have total threads to spare
@@ -87,11 +87,11 @@ Necessary if you have purchased new servers or port-opening tools.
 
 ## Tips
 
-* Running the full script requires at least 15.75GB ram (Or 13.65GB if you don't need to `run killall.js`)
+* Running the full script requires at least 17.75GB ram (Or 15.65GB if you don't need to `run killall.js`)
 	* If you don't have enough, just run a smaller script in the beginning to get money to upgrade your home ram.
 		You may use `early-hack-template.script` from the [Bitburner docs](https://bitburner.readthedocs.io/en/latest/guidesandtips/gettingstartedguideforbeginnerprogrammers.html#editing-our-hacking-script)
 * My personal priority:
-	* Buy enough home ram to run the scripts - in order to accomodate the 15.75GB ram needed to run all the scripts.
+	* Buy enough home ram to run the scripts - in order to accomodate the 17.75GB ram needed to run all the scripts.
 	* Buy TOR router.
 	* `buy` the port-opening programs as you can afford it.
 	* But the Deeplink programs as you can afford it.

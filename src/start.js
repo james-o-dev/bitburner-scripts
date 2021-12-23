@@ -85,6 +85,7 @@ const getServerDetails = (ns, name, { reserveRam = 0 } = {}) => {
 		minSecurityLevel: ns.getServerMinSecurityLevel(name),
 		name: name,
 		requiredHackingLevel: ns.getServerRequiredHackingLevel(name),
+		serverGrowth: ns.getServerGrowth(name),
 	}
 }
 

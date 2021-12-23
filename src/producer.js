@@ -30,7 +30,8 @@ export async function main(ns) {
             })
             .map(target => {
 
-                let value = target.maxMoney * ns.hackAnalyzeChance(target.name) * ns.hackAnalyze(target.name)
+                let value = target.maxMoney * ns.hackAnalyzeChance(target.name) * ns.hackAnalyze(target.name) * target.serverGrowth
+                value = value / target.minSecurityLevel
                 value = value / (ns.getGrowTime(target.name) + ns.getHackTime(target.name) + ns.getWeakenTime(target.name))
 
                 if (value > maxValue) maxValue = value
@@ -55,9 +56,9 @@ export async function main(ns) {
 
                     // Get polling differences, so that they finish close together.
                     const polls = getPollDifferences([
-                      ns.getWeakenTime(target.name),
-                      ns.getGrowTime(target.name),
-                      ns.getWeakenTime(target.name),
+                        ns.getWeakenTime(target.name),
+                        ns.getGrowTime(target.name),
+                        ns.getWeakenTime(target.name),
                     ])
                     weakenThreads1.poll = polls[0]
                     growThreads.poll = polls[1]
