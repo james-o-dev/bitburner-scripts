@@ -63,6 +63,9 @@ const nuke = (ns, server) => {
 	if (ns.fileExists('SQLInject.exe')) {
 		ns.sqlinject(server)
 	}
+	if (ns.fileExists('HTTPWorm.exe')) {
+		ns.httpworm(server)
+	}
 
 	try {
 		ns.nuke()
