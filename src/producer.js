@@ -45,8 +45,8 @@ export async function main(ns) {
 					script = SCRIPT.WEAKEN
 					threads = Math.ceil((ns.getServerSecurityLevel(target.name) - target.minSecurityLevel) / GAME_CONSTANTS.WEAKEN_THREAD_ANALYZE)
 				}
-				// Else if money is lower than money threshold, grow.
-				else if (moneyAvailable < moneyMinimum) {
+				// Else if money is at or lower than money threshold, grow.
+				else if (moneyAvailable <= moneyMinimum) {
 					script = SCRIPT.GROW
 					const growthDiff = target.maxMoney / moneyAvailable
 					threads = Math.ceil(ns.growthAnalyze(target.name, growthDiff))
