@@ -11,7 +11,9 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 ## Getting Started
 
 * Copy scripts to your home (root directory)
-* `run start.js`
+* `run start.js` -
+* It will `run get-target.js` which will print an optimal server.
+* `run run.js [target]`, where `[target]` is the name of the server returned above.
 
 ## Usage
 
@@ -22,27 +24,28 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 ```js
 export const SETTINGS = {
     /**
-     * mem run.js + mem killall.js
-     * 10.2 + 2.1
-     *
-     * Override if needed to increase free ram.
+     * Reserve ram at home
+		 * Minimum to run `run.js` + `killall.js`
+		 *
+		 * Override if needed to increase free ram.
      */
-    HOME_RESERVED_RAM: 10.2 + 2.1, // + more
+    HOME_RESERVED_RAM: 5.45 + 2.25,
     /**
      * Percentage of the max server money to stay above; Will not take money if below this percentage.
-		 * Increase: If you do not have enough threads, for a full WGWH.
+     * Increase: If you do not have enough threads, for a full WGWH.
      * Decrease: If you have threads to spare.
      */
-    MONEY_THRESH: 0.5,
+    MONEY_THRESH: 0.9,
+    /**
+     * If the money gets below this threshold WHILE the script is running, it will terminate.
+     * Note: Only check while the run script is running - it does not accomodate changes that will happen after already existing scripts.
+     * 0 = disabled
+     */
+    MONEY_SAFETY_TRESH: 0.5,
     /**
      * Duration of polling, in milliseconds.
      */
-    POLL: 2000,
-		/**
-		 * Target this specific server;
-		 * By default, it will target the most profitable server, based on a metric.
-		 */
-		SPECIFIC_TARGET: '',
+    POLL: 1000,
     /**
      * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
      */
@@ -64,24 +67,21 @@ Necessary if you have purchased new servers or port-opening tools.
 
 ## Tips
 
-* Running the full script requires at least 10.2GB ram (Extra 2.1GB if you want to `run killall.js`)
-	* If you don't have enough, just run a smaller script in the beginning to get money to upgrade your home ram to this amount.
-		You may use `early-hack-template.script` from the [Bitburner docs](https://bitburner.readthedocs.io/en/latest/guidesandtips/gettingstartedguideforbeginnerprogrammers.html#editing-our-hacking-script), or another more efficent script in the mean-time
 * My personal priority:
-	* Buy enough home ram to run all the scripts
+	* Buy enough home ram to run all the scripts.
 	* `buy` TOR router.
 	* `buy` the port-opening programs as you can afford it.
 	* But the Deeplink programs as you can afford it.
 	* Buy QoL programs if you want.
 	* Join factions and purchase augments needed.
-	* Upgrade home ram up to a point (until you think you can run all needed threads for all servers).
+	* Upgrade home ram (up, until you feel you no longer need it any more - or when you go over 100 processes on the home server).
 	* Upgrade home cpu (may not be necessary?).
 	* Buy additional servers to use, if you need more ram and you currently can not afford upgrading home ram.
 		* Use `purchase-servers.js` to a single server with the largest amount of ram you can afford.
 	* Once augments get too expensive, install augments and start again.
+* Try and keep below 100 running scripts per server (there might be a game technical reason for it?).
 
 ## To Do
 
 * Comments and descriptions.
-* Investigate improving server target value/priority formula, if .
-* Investigate improving polling and timing.
+* Investigate improving server target value/priority formula.

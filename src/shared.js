@@ -1,34 +1,31 @@
 export const SETTINGS = {
     /**
-     * mem run.js + mem killall.js
-     * 10.2 + 2.1
-     *
-     * Override if needed to increase free ram.
+     * Reserve ram at home
+		 * Minimum to run `run.js` + `killall.js`
+		 *
+		 * Override if needed to increase free ram.
      */
-    HOME_RESERVED_RAM: 10.2 + 2.1, // + more
+    HOME_RESERVED_RAM: 5.45 + 2.25,
     /**
      * Percentage of the max server money to stay above; Will not take money if below this percentage.
      * Increase: If you do not have enough threads, for a full WGWH.
      * Decrease: If you have threads to spare.
      */
-    MONEY_THRESH: 0.5,
+    MONEY_THRESH: 0.9,
+    /**
+     * If the money gets below this threshold WHILE the script is running, it will terminate.
+     * Note: Only check while the run script is running - it does not accomodate changes that will happen after already existing scripts.
+     * 0 = disabled
+     */
+    MONEY_SAFETY_TRESH: 0.5,
     /**
      * Duration of polling, in milliseconds.
      */
-    POLL: 2000,
-    /**
-     * Target this specific server;
-     * By default, it will target the most profitable server, based on a metric.
-     */
-    SPECIFIC_TARGET: '',
+    POLL: 1000,
     /**
      * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
      */
     TOAST_DURATION: 4000,
-}
-
-export const PORT = {
-    SERVERS: 11,
 }
 
 export const SCRIPT = {
@@ -43,6 +40,11 @@ export const SCRIPT_RAM = {
     WEAKEN: 1.75,
 }
 
+export const FILES = {
+    ...SCRIPT,
+    SERVERS: 'servers.txt',
+}
+
 export const GAME_CONSTANTS = {
     HOME: 'home',
     NULL_PORT: 'NULL PORT DATA',
@@ -51,9 +53,9 @@ export const GAME_CONSTANTS = {
 
 /** @param {NS} ns **/
 export function getServers(ns) {
-    const fromPort = getQueue(ns, PORT.SERVERS)
-    if (fromPort.length === 0) throw new Error('run start.js first')
-    return fromPort
+    const serverString = ns.read(FILES.SERVERS)
+    if (!serverString) throw new Error('run start.js first')
+    return JSON.parse(serverString)
 }
 
 /** @param {NS} ns **/
@@ -63,39 +65,17 @@ export function killall(ns) {
         .forEach(({ name }) => ns.killall(name))
 }
 
-export const stringify = (obj) => JSON.stringify(obj, null, 4)
-
-/** @param {NS} ns **/
-export const getQueue = (ns, port) => {
-    let data = ns.peek(port)
-    if (data === GAME_CONSTANTS.NULL_PORT) data = '[]'
-    return JSON.parse(data)
-}
-
-/** @param {NS} ns **/
-export const setQueue = (ns, port, queue = '[]') => {
-    ns.clearPort(port)
-    return ns.writePort(port, stringify(queue))
-}
+export const stringify = (obj) => JSON.stringify(obj, null, 2)
 
 export const getScriptRam = (script) => {
-    let scriptRam
-
     switch (script) {
         case SCRIPT.GROW:
-            scriptRam = SCRIPT_RAM.GROW
-            break;
-
+            return SCRIPT_RAM.GROW
         case SCRIPT.HACK:
-            scriptRam = SCRIPT_RAM.HACK
-            break;
-
+            return SCRIPT_RAM.HACK
         case SCRIPT.WEAKEN:
-            scriptRam = SCRIPT_RAM.WEAKEN
-            break;
+            return SCRIPT_RAM.WEAKEN
     }
-
-    return scriptRam
 }
 
 /** @param {NS} ns **/

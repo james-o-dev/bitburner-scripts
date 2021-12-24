@@ -1,169 +1,203 @@
-import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, SCRIPT, SETTINGS } from 'shared.js'
+import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, SCRIPT, SETTINGS, stringify } from 'shared.js'
 
 /** @param {NS} ns **/
 export async function main(ns) {
-    // ns.disableLog('ALL')
+    ns.disableLog('ALL')
+    ns.tail('run.js', GAME_CONSTANTS.HOME, ns.args[0])
 
-    const lastKnown = {
-        // serverName: {
-        //     securityLevel: 0,
-        //     moneyAvailable: 0,
-        // }
-    }
+    let target = getServers(ns).filter(s => s.name === ns.args[0])
+    target = target[0]
+    if (!target) throw new Error('Please specify the target server name as the argument.')
 
     const usable = getServers(ns).filter(s => s.hasRootAccess && s.maxRam > 0).sort((a, b) => b.maxRam - a.maxRam)
 
+    const lastKnown = {
+        moneyAvailable: ns.getServerMoneyAvailable(target.name),
+        securityLevel: ns.getServerSecurityLevel(target.name),
+    }
+
+    let lastTimestamp = 0
     let poll = 0
+
+    // GW until max money and min security.
+    const wg = [0, 0]
+    while (true) {
+        const moneyAvailable = ns.getServerMoneyAvailable(target.name)
+        lastKnown.moneyAvailable = moneyAvailable
+        const securityLevel = ns.getServerSecurityLevel(target.name)
+
+        if (moneyAvailable === target.maxMoney && securityLevel <= target.minSecurityLevel) break
+
+        await ns.sleep(poll)
+        poll = SETTINGS.POLL
+
+        if (wg[0] <= 0 && wg[1] <= 0) {
+            wg[0] = getReqWeakenThreads(lastKnown, target)
+            lastKnown.securityLevel = target.minSecurityLevel
+
+            wg[1] = getReqGrowThreads(lastKnown, target, ns)
+            lastKnown.securityLevel += ns.growthAnalyzeSecurity(wg[1])
+        }
+
+        let script = ''
+        let wgIdx = -1
+        if (wg[0] > 0) {
+            script = SCRIPT.WEAKEN
+            wgIdx = 0
+        } else if (wg[1] > 0) {
+            script = SCRIPT.GROW
+            wgIdx = 1
+        } else {
+            continue
+        }
+
+        const exec = execOnServers(ns, usable, target, script, wg[wgIdx], lastTimestamp)
+        lastTimestamp = exec.scriptEndTimestamp
+        wg[wgIdx] -= exec.threadsUsed
+
+        ns.clearLog()
+        ns.print('WG')
+        printStatus(ns, target)
+        ns.print(stringify(wg))
+    }
+
+    lastKnown.moneyAvailable = target.maxMoney
+    lastKnown.securityLevel = target.minSecurityLevel
+
+    // Do WGWH cycle.
+    const wgwh = [0, 0, 0, 0]
     while (true) {
         await ns.sleep(poll)
 
-        const player = ns.getPlayer()
+        if (SETTINGS.MONEY_SAFETY_TRESH >= SETTINGS.MONEY_THRESH) throw new Error('MONEY_SAFETY_TRESH must be below MONEY_THRESH.')
+        const moneyAvailable = ns.getServerMoneyAvailable(target.name)
+        const safetyMoney = target.maxMoney * SETTINGS.MONEY_SAFETY_TRESH
 
-        let target
+        if (moneyAvailable < safetyMoney) {
+            ns.run('killall.js')
+            throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_TRESH} money threshold.`)
+        }
 
-        if (SETTINGS.SPECIFIC_TARGET) {
-            // Configured to target this specific server.
-            target = SETTINGS.SPECIFIC_TARGET
+        if (wgwh[0] <= 0 && wgwh[1] <= 0 && wgwh[2] <= 0 && wgwh[3] <= 0) {
+            wgwh[0] = getReqWeakenThreads(lastKnown, target)
+            lastKnown.securityLevel = target.minSecurityLevel
+
+            wgwh[1] = getReqGrowThreads(lastKnown, target, ns)
+            lastKnown.securityLevel += ns.growthAnalyzeSecurity(wgwh[1])
+
+            wgwh[2] = getReqWeakenThreads(lastKnown, target)
+            lastKnown.securityLevel = target.minSecurityLevel
+
+            wgwh[3] = getReqHackThreads(target, ns)
+            lastKnown.securityLevel += ns.hackAnalyzeSecurity(wgwh[3])
+            lastKnown.moneyAvailable = target.maxMoney * (SETTINGS.MONEY_THRESH - 0.1)
+        }
+
+        let script = ''
+        let wgwhIdx = -1
+        if (wgwh[0] > 0) {
+            script = SCRIPT.WEAKEN
+            wgwhIdx = 0
+        } else if (wgwh[1] > 0) {
+            script = SCRIPT.GROW
+            wgwhIdx = 1
+        } else if (wgwh[2] > 0) {
+            script = SCRIPT.WEAKEN
+            wgwhIdx = 2
+        } else if (wgwh[3] > 0) {
+            script = SCRIPT.HACK
+            wgwhIdx = 3
         } else {
-            // Get the profitable server, based on the above metric.
-            target = getServers(ns)
-                .filter(t => {
-                    if (t.maxMoney <= 0) return false
-                    if (!t.hasRootAccess) return false
-                    if (t.name === GAME_CONSTANTS.HOME) return false
-                    if (t.requiredHackingLevel > player.hacking) return false
-                    if (ns.hackAnalyzeChance(t.name) === 0) return false
-
-                    return true
-                })
-                .map(t => {
-                    let value = t.maxMoney * ns.hackAnalyzeChance(t.name) * ns.hackAnalyze(t.name) * t.serverGrowth
-                    value = value / t.minSecurityLevel
-                    // value = value / (ns.getGrowTime(target.name) + ns.getHackTime(target.name) + ns.getWeakenTime(target.name))
-
-                    t.value = value
-                    return t
-                })
-                .reduce((t, ts) => !t || (ts.value > t.value) ? ts : t, null)
+            continue
         }
 
-        // When the full WGWH is successful, set this as the next lastKnown values for the next time.
-        let lastKnownWorking = {}
+        const exec = execOnServers(ns, usable, target, script, wgwh[wgwhIdx], lastTimestamp)
+        lastTimestamp = exec.scriptEndTimestamp
+        wgwh[wgwhIdx] -= exec.threadsUsed
 
-        if (lastKnown[target.name]) {
-            lastKnownWorking = { ...lastKnown[target.name] }
-        } else {
-            lastKnownWorking = {
-                securityLevel: ns.getServerSecurityLevel(target.name),
-                moneyAvailable: ns.getServerMoneyAvailable(target.name),
-            }
-        }
-
-        // Do WGWH.
-        const weaken1 = getWeaken(target, lastKnownWorking)
-        lastKnownWorking.securityLevel = target.minSecurityLevel
-
-        const grow = getGrow(target, lastKnownWorking, ns)
-        lastKnownWorking.securityLevel += grow.securityIncrease
-        lastKnownWorking.moneyAvailable = target.maxMoney
-
-        const weaken2 = getWeaken(target, lastKnownWorking)
-        lastKnownWorking.securityLevel = target.minSecurityLevel
-
-        const hack = getHack(target, ns)
-        lastKnownWorking.moneyAvailable = target.maxMoney * SETTINGS.MONEY_THRESH
-        lastKnownWorking.securityLevel += hack.securityIncrease
-
-        let scripts = [weaken1, grow, weaken2, hack].filter(s => s.threads > 0)
-				const polls = getPollDifferences(scripts.map(s => getScriptTime(ns, s.script, target.name)))
-				scripts = scripts.map((s, i) => {
-					s.poll = polls[i]
-					return s
-				})
-
-        let canExec = true
-        const execServers = []
-        for (let script of scripts) {
-            if (!canExec) break
-
-            let reqThreads = script.threads
-            for (let server of usable) {
-                if (reqThreads <= 0) break
-                let threads = 0
-
-                const threadsAvailable = Math.floor((server.maxRam - ns.getServerUsedRam(server.name)) / getScriptRam(script.script))
-
-                if (threadsAvailable === 0) continue
-                else if (threadsAvailable > reqThreads) threads = reqThreads
-                else threads = threadsAvailable
-
-                if (threads > 0) {
-                    execServers.push({ script: script.script, server: server.name, threads, poll: script.poll })
-                    reqThreads -= threads
-                }
-            }
-
-            canExec = reqThreads <= 0
-        }
-
-        if (canExec) {
-            for (let i = 0; i < execServers.length; i++) {
-                const element = execServers[i]
-                const random = Math.random() // Add a random number so the running script is unique.
-                ns.exec(element.script, element.server, element.threads, target.name, element.poll, random)
-            }
-
-            lastKnown[target.name] = { ...lastKnownWorking }
-        }
-
-        poll = SETTINGS.POLL * (scripts.length + 1)
+        ns.clearLog()
+        ns.print('WGWH')
+        printStatus(ns, target)
+        ns.print(stringify(wgwh))
+        ns.print(stringify(lastKnown))
     }
 }
 
-
 /** @param {NS} ns **/
-const getGrow = (target, lastKnown, ns) => {
-    const script = SCRIPT.GROW
+const getReqGrowThreads = (lastKnown, target, ns) => {
     const growDiffPct = target.maxMoney / lastKnown.moneyAvailable
-
-    const threads = Math.ceil(ns.growthAnalyze(target.name, growDiffPct))
-    const securityIncrease = ns.growthAnalyzeSecurity(threads)
-
-    return {
-        script,
-        securityIncrease,
-        threads,
-    }
+    return Math.ceil(ns.growthAnalyze(target.name, growDiffPct))
 }
 
 /** @param {NS} ns **/
-const getWeaken = (target, lastKnown) => {
-    const script = SCRIPT.WEAKEN
-    const weakenDiff = lastKnown.securityLevel - target.minSecurityLevel
-    const threads = Math.ceil(weakenDiff / GAME_CONSTANTS.WEAKEN_THREAD_ANALYZE)
-
-    return {
-        script,
-        threads,
-    }
-}
-
-/** @param {NS} ns **/
-const getHack = (target, ns) => {
-    const script = SCRIPT.HACK
+const getReqHackThreads = (target, ns) => {
     const moneyMinimum = target.maxMoney * SETTINGS.MONEY_THRESH
     const hackDiff = target.maxMoney - moneyMinimum
-    const threads = Math.floor(ns.hackAnalyzeThreads(target.name, hackDiff))
-    const securityIncrease = ns.hackAnalyzeSecurity(threads)
+    return Math.floor(ns.hackAnalyzeThreads(target.name, hackDiff))
+}
+
+const getReqWeakenThreads = (lastKnown, target) => {
+    const weakenDiff = lastKnown.securityLevel - target.minSecurityLevel
+    return Math.ceil(weakenDiff / GAME_CONSTANTS.WEAKEN_THREAD_ANALYZE)
+}
+
+/** @param {NS} ns **/
+const execOnServers = (ns, usableServers, target, script, reqThreads, lastTimestamp) => {
+    const scriptRam = getScriptRam(script)
+
+    let scriptEndTimestamp = Date.now() + getScriptTime(ns, script, target.name)
+    let scriptPoll = 0
+    let threadsUsed = 0
+
+    // If it will finish before the last timestamp: add extra poll time so that it finishes after, in order to maintain the order.
+    if (scriptEndTimestamp < lastTimestamp) scriptPoll = lastTimestamp - scriptEndTimestamp
+
+    scriptPoll += SETTINGS.POLL
+    scriptEndTimestamp += scriptPoll
+
+    // Check available servers.
+    for (let server of usableServers) {
+        if (reqThreads <= 0) break
+
+        const threads = getUsableServerThreads(ns, server, reqThreads, scriptRam)
+
+        if (threads > 0) {
+            ns.exec(script, server.name, threads, target.name, scriptPoll, Math.random())
+            reqThreads -= threads
+            threadsUsed += threads
+        }
+    }
 
     return {
-        script,
-        securityIncrease,
-        threads,
+        scriptEndTimestamp: scriptEndTimestamp,
+        threadsUsed,
     }
 }
 
-const getPollDifferences = (polls) => {
-    const maxPoll = polls.reduce((m, p) => m < p ? p : m, 0)
-    return polls.map((p, i) => maxPoll - p + (i * SETTINGS.POLL))
+/** @param {NS} ns **/
+const getUsableServerThreads = (ns, server, threadsReq, scriptRam) => {
+    if (threadsReq <= 0) return 0
+
+    const threadsAvailable = Math.floor((server.maxRam - ns.getServerUsedRam(server.name)) / scriptRam)
+
+    const threads = threadsAvailable > threadsReq ? threadsReq : threadsAvailable
+
+    return threads < 0 ? 0 : threads
 }
+
+/** @param {NS} ns **/
+const printStatus = (ns, target) => {
+    const moneyAvailable = ns.getServerMoneyAvailable(target.name)
+    const securityLevel = ns.getServerSecurityLevel(target.name)
+    const nFormat = '$0,0'
+
+    const securityDiff = securityLevel - target.minSecurityLevel
+
+    ns.print(`SECURITY: ${securityLevel} / ${target.minSecurityLevel} (${securityDiff})`)
+    ns.print(`MONEY: ${ns.nFormat(moneyAvailable, nFormat)} / ${ns.nFormat(target.maxMoney, nFormat)} (${Math.round((moneyAvailable / target.maxMoney) * 100)}%)`)
+}
+
+// const getPollDifferences = (polls) => {
+//     const maxPoll = polls.reduce((m, p) => m < p ? p : m, 0)
+//     return polls.map((p, i) => maxPoll - p + (i * SETTINGS.POLL))
+// }

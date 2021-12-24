@@ -1,4 +1,4 @@
-import { GAME_CONSTANTS, killall, PORT, SCRIPT, SETTINGS, stringify } from 'shared.js'
+import { FILES, GAME_CONSTANTS, killall,  SCRIPT, SETTINGS, stringify } from 'shared.js'
 
 const flagConfig = [
 	['no-run', false],
@@ -7,7 +7,6 @@ const flagConfig = [
 /** @param {NS} ns **/
 export async function main(ns) {
 	const flags = ns.flags(flagConfig)
-
 
 	// Get all servers.
 	const servers = getServersRecursive(ns, GAME_CONSTANTS.HOME, null)
@@ -23,15 +22,12 @@ export async function main(ns) {
 
 	const serversString = stringify(servers)
 
-	ns.clearPort(PORT.SERVERS)
-	await ns.writePort(PORT.SERVERS, serversString)
+	await ns.write(FILES.SERVERS, serversString, 'w')
 
 	killall(ns)
 
-	if (!flags['no-run']) {
-		ns.kill('run.js', GAME_CONSTANTS.HOME)
-		ns.spawn('run.js', 1)
-	}
+	ns.kill('run.js', GAME_CONSTANTS.HOME)
+	ns.run('get-target.js', 1)
 }
 
 /** @param {NS} ns **/
@@ -66,7 +62,7 @@ const nuke = (ns, server) => {
 	}
 
 	try {
-		ns.nuke()
+		ns.nuke(server)
 		return true
 	} catch (_) {
 		return false
