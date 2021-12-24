@@ -1,4 +1,4 @@
-import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, SCRIPT, SETTINGS, stringify } from 'shared.js'
+import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, killall, SCRIPT, SETTINGS, stringify } from 'shared.js'
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -64,6 +64,8 @@ export async function main(ns) {
     lastKnown.moneyAvailable = target.maxMoney
     lastKnown.securityLevel = target.minSecurityLevel
 
+		killall(ns)
+
     // Do WGWH cycle.
     const wgwh = [0, 0, 0, 0]
     while (true) {
@@ -90,7 +92,8 @@ export async function main(ns) {
 
             wgwh[3] = getReqHackThreads(target, ns)
             lastKnown.securityLevel += ns.hackAnalyzeSecurity(wgwh[3])
-            lastKnown.moneyAvailable = target.maxMoney * (SETTINGS.MONEY_THRESH - 0.1)
+						// Additional safety hacking - assume it has less available than it actually has.
+            lastKnown.moneyAvailable = target.maxMoney * (SETTINGS.MONEY_THRESH - (SETTINGS.MONEY_THRESH * SETTINGS.MONEY_SAFETY_TRESH * 0.5))
         }
 
         let script = ''
