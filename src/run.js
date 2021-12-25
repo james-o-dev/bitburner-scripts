@@ -11,25 +11,44 @@ export async function main(ns) {
 
     const usable = getServers(ns).filter(s => s.hasRootAccess && s.maxRam > 0).sort((a, b) => b.maxRam - a.maxRam)
 
-    const lastKnown = {
+    let lastKnown = {
         moneyAvailable: ns.getServerMoneyAvailable(target.name),
         securityLevel: ns.getServerSecurityLevel(target.name),
+        timestamp: 0,
     }
 
-    let lastTimestamp = 0
-    let poll = 0
+    while (true) {
+        // WG until max money and min security, then hack via WGWH.
+        const wgLoopReturn = await wgLoop(ns, target, lastKnown, usable)
+        killall(ns)
+        lastKnown = wgLoopReturn.lastKnown
+        lastKnown.moneyAvailable = target.maxMoney
+        lastKnown.securityLevel = target.minSecurityLevel
+
+        // WGWH to hack, until it needs to re-grow the server via WG.
+        const wgwhLoopReturn = await wgwhLoop(ns, target, lastKnown, usable)
+        killall(ns)
+        lastKnown = wgwhLoopReturn.lastKnown
+        lastKnown.moneyAvailable = ns.getServerMoneyAvailable(target.name)
+        lastKnown.securityLevel = ns.getServerSecurityLevel(target.name)
+    }
+}
+
+/** @param {NS} ns **/
+const wgLoop = async (ns, target, lastKnown, usable) => {
 
     // GW until max money and min security.
     const wg = [0, 0]
+
     while (true) {
         const moneyAvailable = ns.getServerMoneyAvailable(target.name)
         lastKnown.moneyAvailable = moneyAvailable
         const securityLevel = ns.getServerSecurityLevel(target.name)
 
-        if (moneyAvailable === target.maxMoney && securityLevel <= target.minSecurityLevel) break
+        // Finished with WG.
+        if (moneyAvailable === target.maxMoney && securityLevel <= target.minSecurityLevel) return { lastKnown }
 
-        await ns.sleep(poll)
-        poll = SETTINGS.POLL
+        await ns.sleep(SETTINGS.POLL)
 
         if (wg[0] <= 0 && wg[1] <= 0) {
             wg[0] = getReqWeakenThreads(lastKnown, target)
@@ -51,8 +70,8 @@ export async function main(ns) {
             continue
         }
 
-        const exec = execOnServers(ns, usable, target, script, wg[wgIdx], lastTimestamp)
-        lastTimestamp = exec.scriptEndTimestamp
+        const exec = execOnServers(ns, usable, target, script, wg[wgIdx], lastKnown.timestamp)
+        lastKnown.timestamp = exec.scriptEndTimestamp
         wg[wgIdx] -= exec.threadsUsed
 
         ns.clearLog()
@@ -60,24 +79,25 @@ export async function main(ns) {
         printStatus(ns, target)
         ns.print(stringify(wg))
     }
+}
 
-    lastKnown.moneyAvailable = target.maxMoney
-    lastKnown.securityLevel = target.minSecurityLevel
-
-		killall(ns)
+/** @param {NS} ns **/
+const wgwhLoop = async (ns, target, lastKnown, usable) => {
 
     // Do WGWH cycle.
     const wgwh = [0, 0, 0, 0]
     while (true) {
-        await ns.sleep(poll)
+        await ns.sleep(SETTINGS.POLL)
 
         if (SETTINGS.MONEY_SAFETY_TRESH >= SETTINGS.MONEY_THRESH) throw new Error('MONEY_SAFETY_TRESH must be below MONEY_THRESH.')
         const moneyAvailable = ns.getServerMoneyAvailable(target.name)
         const safetyMoney = target.maxMoney * SETTINGS.MONEY_SAFETY_TRESH
 
+        // Needs to re-grow via WG
         if (moneyAvailable < safetyMoney) {
-            ns.run('killall.js')
-            throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_TRESH} money threshold.`)
+            // ns.run('killall.js')
+            // throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_TRESH} money threshold.`)
+            return { lastKnown }
         }
 
         if (wgwh[0] <= 0 && wgwh[1] <= 0 && wgwh[2] <= 0 && wgwh[3] <= 0) {
@@ -92,7 +112,7 @@ export async function main(ns) {
 
             wgwh[3] = getReqHackThreads(target, ns)
             lastKnown.securityLevel += ns.hackAnalyzeSecurity(wgwh[3])
-						// Additional safety hacking - assume it has less available than it actually has.
+            // Additional safety hacking - assume it has less available than it actually has.
             lastKnown.moneyAvailable = target.maxMoney * (SETTINGS.MONEY_THRESH - (SETTINGS.MONEY_THRESH * SETTINGS.MONEY_SAFETY_TRESH * 0.5))
         }
 
@@ -114,15 +134,14 @@ export async function main(ns) {
             continue
         }
 
-        const exec = execOnServers(ns, usable, target, script, wgwh[wgwhIdx], lastTimestamp)
-        lastTimestamp = exec.scriptEndTimestamp
+        const exec = execOnServers(ns, usable, target, script, wgwh[wgwhIdx], lastKnown.timestamp)
+        lastKnown.timestamp = exec.scriptEndTimestamp
         wgwh[wgwhIdx] -= exec.threadsUsed
 
         ns.clearLog()
         ns.print('WGWH')
         printStatus(ns, target)
         ns.print(stringify(wgwh))
-        ns.print(stringify(lastKnown))
     }
 }
 
