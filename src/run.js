@@ -154,8 +154,9 @@ const wgwhLoop = async (ns, target, lastKnown, usable) => {
 
 /** @param {NS} ns **/
 const getReqGrowThreads = (lastKnown, target, ns) => {
+		const growMulti = 2 // For extra caution...
     const growDiffPct = target.maxMoney / lastKnown.moneyAvailable
-    return Math.ceil(ns.growthAnalyze(target.name, growDiffPct))
+    return Math.ceil(ns.growthAnalyze(target.name, growDiffPct) * growMulti)
 }
 
 /** @param {NS} ns **/
@@ -235,7 +236,6 @@ const getStartPrint = (ns, target, includeHack = false) => {
     )
 		const startTime = Date.now() + startPoll + SETTINGS.POLL
     const startTimestamp = new Date(Date.now() + startPoll + SETTINGS.POLL).toLocaleTimeString()
-
 
     return {
 			message: `Start: ${new Date(startTimestamp).toLocaleTimeString()}`,
