@@ -1,11 +1,9 @@
 export const SETTINGS = {
     /**
-     * Reserve ram at home
-		 * Minimum to run `run.js` + `killall.js`
-		 *
-		 * Override if needed to increase free ram.
+     * Override to reserve ram at home
+		 * By default, reserve total ram of `run.js` + `killall.js`
      */
-    HOME_RESERVED_RAM: 5.45 + 2.25,
+    HOME_RESERVED_RAM: null,
     /**
      * Percentage of the max server money to stay above; Will not take money if below this percentage.
      * Increase: If you do not have enough threads, for a full WGWH.
@@ -31,12 +29,15 @@ export const SETTINGS = {
 export const SCRIPT = {
     GROW: 'grow.js',
     HACK: 'hack.js',
+		KILLALL: 'killall.js',
+    RUN: 'run.js',
     SHARED: 'shared.js',
     WEAKEN: 'weaken.js',
 }
 export const SCRIPT_RAM = {
     GROW: 1.7,
     HACK: 1.7,
+    KILLALL: 2.25,
     WEAKEN: 1.75,
 }
 
@@ -73,6 +74,8 @@ export const getScriptRam = (script) => {
             return SCRIPT_RAM.GROW
         case SCRIPT.HACK:
             return SCRIPT_RAM.HACK
+        case SCRIPT.KILLALL:
+            return SCRIPT_RAM.KILLALL
         case SCRIPT.WEAKEN:
             return SCRIPT_RAM.WEAKEN
     }

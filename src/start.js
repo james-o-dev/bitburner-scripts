@@ -1,17 +1,13 @@
-import { FILES, GAME_CONSTANTS, killall,  SCRIPT, SETTINGS, stringify } from 'shared.js'
-
-const flagConfig = [
-	['no-run', false],
-]
+import { FILES, GAME_CONSTANTS, killall, getScriptRam, SCRIPT, SETTINGS, stringify } from 'shared.js'
 
 /** @param {NS} ns **/
 export async function main(ns) {
-	const flags = ns.flags(flagConfig)
+	const reserveRam = SETTINGS.HOME_RESERVED_RAM || (getScriptRam(SCRIPT.KILLALL) + ns.getScriptRam(SCRIPT.RUN))
 
 	// Get all servers.
 	const servers = getServersRecursive(ns, GAME_CONSTANTS.HOME, null)
 		.map(s => {
-			const serverObject = getServerDetails(ns, s, { reserveRam: GAME_CONSTANTS.HOME ? SETTINGS.HOME_RESERVED_RAM : 0 })
+			const serverObject = getServerDetails(ns, s, { reserveRam: s === GAME_CONSTANTS.HOME ? reserveRam : 0 })
 			serverObject.hasRootAccess = nuke(ns, s)
 			return serverObject
 		})
@@ -26,7 +22,6 @@ export async function main(ns) {
 
 	killall(ns)
 
-	ns.kill('run.js', GAME_CONSTANTS.HOME)
 	ns.run('get-target.js', 1)
 }
 
@@ -71,7 +66,7 @@ const nuke = (ns, server) => {
 
 /** @param {NS} ns **/
 const getServerDetails = (ns, name, { reserveRam = 0 } = {}) => {
-	const maxRam = ns.getServerMaxRam(name) - reserveRam
+	const maxRam = Math.floor(ns.getServerMaxRam(name) - reserveRam)
 	return {
 		hasRootAccess: ns.hasRootAccess(name),
 		maxMoney: ns.getServerMaxMoney(name),
