@@ -37,6 +37,8 @@ export async function main(ns) {
 /** @param {NS} ns **/
 const wgLoop = async (ns, target, lastKnown, usable) => {
 
+    const startMessage = getStartPrint(ns, target, false)
+
     // GW until max money and min security.
     const wg = [0, 0]
 
@@ -76,6 +78,7 @@ const wgLoop = async (ns, target, lastKnown, usable) => {
 
         ns.clearLog()
         ns.print('WG')
+        ns.print(startMessage)
         printStatus(ns, target)
         ns.print(stringify(wg))
     }
@@ -83,6 +86,8 @@ const wgLoop = async (ns, target, lastKnown, usable) => {
 
 /** @param {NS} ns **/
 const wgwhLoop = async (ns, target, lastKnown, usable) => {
+
+    const startMessage = getStartPrint(ns, target, true)
 
     // Do WGWH cycle.
     const wgwh = [0, 0, 0, 0]
@@ -140,6 +145,7 @@ const wgwhLoop = async (ns, target, lastKnown, usable) => {
 
         ns.clearLog()
         ns.print('WGWH')
+        ns.print(startMessage)
         printStatus(ns, target)
         ns.print(stringify(wgwh))
     }
@@ -217,6 +223,19 @@ const printStatus = (ns, target) => {
 
     ns.print(`SECURITY: ${securityLevel} / ${target.minSecurityLevel} (${securityDiff})`)
     ns.print(`MONEY: ${ns.nFormat(moneyAvailable, nFormat)} / ${ns.nFormat(target.maxMoney, nFormat)} (${Math.round((moneyAvailable / target.maxMoney) * 100)}%)`)
+}
+
+/** @param {NS} ns **/
+const getStartPrint = (ns, target, includeHack = false) => {
+    const startPoll = Math.max(
+        getScriptTime(ns, SCRIPT.GROW, target.name),
+        getScriptTime(ns, SCRIPT.WEAKEN, target.name),
+				includeHack ? getScriptTime(ns, SCRIPT.HACK, target.name) : 0
+    )
+    const startPollf = ns.tFormat(startPoll)
+    const startTime = new Date(Date.now() + startPoll + SETTINGS.POLL).toLocaleTimeString()
+
+    return `Start: ${startTime}`
 }
 
 // const getPollDifferences = (polls) => {
