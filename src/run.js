@@ -78,7 +78,8 @@ const wgLoop = async (ns, target, lastKnown, usable) => {
 
         ns.clearLog()
         ns.print('WG')
-        ns.print(startMessage)
+				const timeToStart = startMessage.startTime - Date.now()
+				if (timeToStart > 0) ns.print(ns.tFormat(timeToStart))
         printStatus(ns, target)
         ns.print(stringify(wg))
     }
@@ -117,8 +118,7 @@ const wgwhLoop = async (ns, target, lastKnown, usable) => {
 
             wgwh[3] = getReqHackThreads(target, ns)
             lastKnown.securityLevel += ns.hackAnalyzeSecurity(wgwh[3])
-            // Additional safety hacking - assume it has less available than it actually has.
-            lastKnown.moneyAvailable = target.maxMoney * (SETTINGS.MONEY_THRESH - (SETTINGS.MONEY_THRESH * SETTINGS.MONEY_SAFETY_TRESH * 0.5))
+            lastKnown.moneyAvailable = target.maxMoney * SETTINGS.MONEY_THRESH
         }
 
         let script = ''
@@ -145,7 +145,8 @@ const wgwhLoop = async (ns, target, lastKnown, usable) => {
 
         ns.clearLog()
         ns.print('WGWH')
-        ns.print(startMessage)
+				const timeToStart = startMessage.startTime - Date.now()
+				if (timeToStart > 0) ns.print(ns.tFormat(timeToStart))
         printStatus(ns, target)
         ns.print(stringify(wgwh))
     }
@@ -232,10 +233,14 @@ const getStartPrint = (ns, target, includeHack = false) => {
         getScriptTime(ns, SCRIPT.WEAKEN, target.name),
 				includeHack ? getScriptTime(ns, SCRIPT.HACK, target.name) : 0
     )
-    const startPollf = ns.tFormat(startPoll)
-    const startTime = new Date(Date.now() + startPoll + SETTINGS.POLL).toLocaleTimeString()
+		const startTime = Date.now() + startPoll + SETTINGS.POLL
+    const startTimestamp = new Date(Date.now() + startPoll + SETTINGS.POLL).toLocaleTimeString()
 
-    return `Start: ${startTime}`
+
+    return {
+			message: `Start: ${new Date(startTimestamp).toLocaleTimeString()}`,
+			startTime,
+		}
 }
 
 // const getPollDifferences = (polls) => {
