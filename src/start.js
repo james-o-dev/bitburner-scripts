@@ -12,7 +12,7 @@ export async function main(ns) {
 	// Get all servers.
 	const servers = getServersRecursive(ns, GAME_CONSTANTS.HOME, null)
 		.map(s => {
-			const serverObject = getServerDetails(ns, s, { reservedRam: GAME_CONSTANTS.HOME ? SETTINGS.HOME_RESERVED_RAM : 0 })
+			const serverObject = getServerDetails(ns, s, { reserveRam: GAME_CONSTANTS.HOME ? SETTINGS.HOME_RESERVED_RAM : 0 })
 			serverObject.hasRootAccess = nuke(ns, s)
 			return serverObject
 		})
