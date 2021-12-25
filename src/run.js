@@ -92,6 +92,8 @@ const wgwhLoop = async (ns, target, lastKnown, usable) => {
 
     // Do WGWH cycle.
     const wgwh = [0, 0, 0, 0]
+
+		let initialHackThreads = 0
     while (true) {
         await ns.sleep(SETTINGS.POLL)
 
@@ -119,6 +121,11 @@ const wgwhLoop = async (ns, target, lastKnown, usable) => {
             wgwh[3] = getReqHackThreads(target, ns)
             lastKnown.securityLevel += ns.hackAnalyzeSecurity(wgwh[3])
             lastKnown.moneyAvailable = target.maxMoney * SETTINGS.MONEY_THRESH
+
+						// Only use up to the initial hack thread number.
+						// This assumes that the WGWH cycle initially started with max money and min security.
+						if (!initialHackThreads) initialHackThreads = wgwh[3]
+						else if (wgwh[3] > initialHackThreads) wgwh[3] = initialHackThreads
         }
 
         let script = ''
@@ -154,9 +161,8 @@ const wgwhLoop = async (ns, target, lastKnown, usable) => {
 
 /** @param {NS} ns **/
 const getReqGrowThreads = (lastKnown, target, ns) => {
-		const growMulti = 2 // For extra caution...
     const growDiffPct = target.maxMoney / lastKnown.moneyAvailable
-    return Math.ceil(ns.growthAnalyze(target.name, growDiffPct) * growMulti)
+    return Math.ceil(ns.growthAnalyze(target.name, growDiffPct))
 }
 
 /** @param {NS} ns **/
