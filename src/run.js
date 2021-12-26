@@ -77,8 +77,8 @@ const gwLoop = async (ns, target, usable) => {
                     ns.exec(queued.script, server.name, threads, target.name, queued.poll, Math.random())
                     reqThreads[queued.script] -= threads
 
-										const endingTimestamp = Date.now() + queued.poll
-										if (endingTimestamp > gwEndTimestamp) gwEndTimestamp = endingTimestamp
+                    const endingTimestamp = Date.now() + queued.scriptTime + queued.poll
+                    if (endingTimestamp > gwEndTimestamp) gwEndTimestamp = endingTimestamp
                 }
             }
         }
