@@ -89,26 +89,14 @@ export const getScriptRam = (script) => {
 
 /** @param {NS} ns **/
 export const getScriptTime = (ns, script, server) => {
-    const hasFormulas = hasFormulasExe(ns)
-    let playerObj = null
-    let serverObj = null
-
-    if (hasFormulas) {
-        playerObj = ns.getPlayer()
-        serverObj = ns.getServer(server)
-    }
-
     switch (script) {
         case SCRIPT.GROW:
-            if (hasFormulas) return ns.formulas.hacking.growTime(serverObj, playerObj)
             return ns.getGrowTime(server)
 
         case SCRIPT.HACK:
-            if (hasFormulas) return ns.formulas.hacking.hackTime(serverObj, playerObj)
             return ns.getHackTime(server)
 
         case SCRIPT.WEAKEN:
-            if (hasFormulas) return ns.formulas.hacking.weakenTime(serverObj, playerObj)
             return ns.getWeakenTime(server)
     }
 }
