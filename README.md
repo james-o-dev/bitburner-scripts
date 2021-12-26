@@ -89,6 +89,6 @@ Necessary if you have purchased new servers or port-opening tools.
 
 ## To Do
 
-* The HWGW eventually goes below the money safety threshold and exits... :(
+* HWGW sometimes becomes out of sync (taking below the money safety threshold) and exits... :(
 * Comments and descriptions.
 * Investigate improving server target value/priority formula.

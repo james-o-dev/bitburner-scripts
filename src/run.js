@@ -16,7 +16,7 @@ export async function main(ns) {
     // GW until max money and min security, then hack via HWGW.
     ns.tprint('GW started.')
     await gwLoop(ns, target, usable)
-		killall(ns)
+    killall(ns)
     ns.tprint('GW finished; HWGW started.')
     await hwgwLoop(ns, target, usable)
 }
@@ -52,7 +52,7 @@ const gwLoop = async (ns, target, usable) => {
             })
         }
 
-        const polls = getPollDifferences(exec.map(e => e.scriptTime))
+        const polls = getPolls(exec.map(e => e.scriptTime))
 
         exec = exec.map((e, i) => {
             e.poll = polls[i]
@@ -103,8 +103,8 @@ const hwgwLoop = async (ns, target, usable) => {
         const prevDiff = prevMoneyAvailable - moneyAvailable
         // Increase the growth threads, decrease hack threads if the available money is going down.
         let hgRecoverRate = 1
-        // if (prevMoneyAvailable && prevDiff < 0) hgRate += Math.abs(prevDiff / moneyAvailable) // Does not work as well...
-        if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate = 2 // Temp increase in order to recover.
+        if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate += Math.abs(prevDiff / moneyAvailable) // Does not work as well...
+        // if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate = 2 // Temp increase in order to recover.
 
         const hwgw = [
             { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), },
@@ -114,8 +114,7 @@ const hwgwLoop = async (ns, target, usable) => {
         ]
 
         // Determine polling.
-        const polls = getPollDifferences(hwgw.map(h => h.scriptTime))
-        polls[polls.length - 1] += SETTINGS.POLL
+        const polls = getPolls(hwgw.map(h => h.scriptTime))
 
         // First determine the money threshold so that all our servers can currently accomodate an entire batch.
         let moneyThresh = SETTINGS.MONEY_THRESH
@@ -151,7 +150,7 @@ const hwgwLoop = async (ns, target, usable) => {
                             server: server.name,
                             threads,
                             target: target.name,
-                            poll: polls[i]
+                            poll: polls[i] + SETTINGS.POLL
                         })
                         reqThreads[i] -= threads
                     }
@@ -173,6 +172,13 @@ const hwgwLoop = async (ns, target, usable) => {
             for (const queued of exec) {
                 ns.exec(queued.script, queued.server, queued.threads, queued.target, queued.poll, Math.random())
             }
+
+            // const timestamps = exec
+            //     .map(e => Date.now() + getScriptTime(ns, e.script, target.name) + e.poll)
+            //     .sort((a, b) => a - b)
+            //     .map(e => new Date(e).toLocaleTimeString())
+
+            // ns.tprint(stringify(timestamps))
         }
 
         prevMoneyAvailable = moneyAvailable
@@ -231,8 +237,8 @@ const printStatus = (ns, target) => {
     ns.print(`MONEY: ${ns.nFormat(moneyAvailable, nFormat)} / ${ns.nFormat(target.maxMoney, nFormat)} (${Math.round((moneyAvailable / target.maxMoney) * 100)}%)`)
 }
 
-const getPollDifferences = (polls) => {
-		const eachPoll = SETTINGS.POLL / polls.length // One batch to fit within a poll.
+const getPolls = (polls) => {
+		const scriptInterval = SETTINGS.POLL / polls.length // One batch to fit within a poll.
     const maxPoll = polls.reduce((m, p) => m < p ? p : m, 0)
-    return polls.map((p, i) => maxPoll - p + (i * eachPoll))
+    return polls.map((p, i) => maxPoll - p + (i * scriptInterval))
 }
