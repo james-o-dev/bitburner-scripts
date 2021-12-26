@@ -27,13 +27,14 @@ const gwLoop = async (ns, target, usable) => {
     const moneyAvailable = ns.getServerMoneyAvailable(target.name)
     const securityLevel = ns.getServerSecurityLevel(target.name)
 
-		const reqThreads = {}
+    const reqThreads = {}
     reqThreads[SCRIPT.GROW] = getReqGrowThreads(target, ns, moneyAvailable)
     reqThreads[SCRIPT.WEAKEN] = getReqWeakenThreads(target, securityLevel + ns.growthAnalyzeSecurity(reqThreads[SCRIPT.GROW]))
 
-		// Timestamp when the GW loop ends.
-		// The HWGW should not check the money safet threshold until after this timestamp.
-		let gwEndTimestamp = 0
+    // Timestamp when the GW loop ends.
+    // The HWGW should not check the money safety threshold until after this timestamp.
+    let gwEndTimestamp = 0
+    let gwStartTimestamp = 0
 
     let poll = 0
     while (true) {
@@ -77,8 +78,9 @@ const gwLoop = async (ns, target, usable) => {
                     ns.exec(queued.script, server.name, threads, target.name, queued.poll, Math.random())
                     reqThreads[queued.script] -= threads
 
-                    const endingTimestamp = Date.now() + queued.scriptTime + queued.poll
-                    if (endingTimestamp > gwEndTimestamp) gwEndTimestamp = endingTimestamp
+                    const scriptEndTimestamp = Date.now() + queued.scriptTime + queued.poll
+                    if (scriptEndTimestamp > gwEndTimestamp) gwEndTimestamp = scriptEndTimestamp
+                    if (!gwStartTimestamp) gwStartTimestamp = scriptEndTimestamp
                 }
             }
         }
@@ -86,6 +88,8 @@ const gwLoop = async (ns, target, usable) => {
         ns.clearLog()
         ns.print('GW')
         printStatus(ns, target)
+        const startingTimer = gwStartTimestamp - Date.now()
+        if (startingTimer > 0) ns.print(`START ${ns.tFormat(startingTimer)}`)
     }
 }
 
@@ -94,30 +98,18 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
     const safetyMoney = target.maxMoney * SETTINGS.MONEY_SAFETY_THRESH
 
     let initialHackThreads = 0
-    let prevMoneyAvailable = 0
+    let hwgwTimestamp = gwEndTimestamp
 
     while (true) {
         await ns.sleep(SETTINGS.POLL)
 
         const moneyAvailable = ns.getServerMoneyAvailable(target.name)
-        const prevDiff = prevMoneyAvailable - moneyAvailable
 
         // Kill all if it currently goes below the safety money threshold.
         if (Date.now() > gwEndTimestamp && moneyAvailable < safetyMoney) {
             ns.run('killall.js')
             throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
         }
-
-        // Difference between the money available previously and the money now.
-        // If +ve, it is increasing - should hack more / grow less.
-        // If -ve, it is decreasing - should hack less / grow more (but we do not, only cap until the initial hack/growth threads).
-        // Note: Only effective if the `MONEY_SAFETY_THRESH` setting is not too low
-        // Increase the growth threads, decrease hack threads if the available money is going down.
-        let hgRecoverRate = 1
-
-        if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate = prevMoneyAvailable / moneyAvailable // Ratio to return `moneyAvailable` to `prevMoneyAvailable`
-        // if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate = 2 // Basic double increase in order to recover.
-        // if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate += Math.abs(prevDiff / moneyAvailable) // ...
 
         const hwgw = [
             { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), },
@@ -159,7 +151,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
 
                     if (threads > 0) {
                         workingExec.push({
-                            script: script.script,
+                            ...script,
                             server: server.name,
                             threads,
                             target: target.name,
@@ -184,6 +176,9 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         if (exec.length > 0) {
             for (const queued of exec) {
                 ns.exec(queued.script, queued.server, queued.threads, queued.target, queued.poll, Math.random())
+
+                const scriptEndTimestamp = Date.now() + queued.scriptTime + queued.poll
+                if (!hwgwTimestamp) hwgwTimestamp = scriptEndTimestamp
             }
 
             // const timestamps = exec
@@ -194,11 +189,11 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
             // ns.tprint(stringify(timestamps))
         }
 
-        prevMoneyAvailable = moneyAvailable
-
         ns.clearLog()
         ns.print('HWGW')
         printStatus(ns, target)
+        const startingTimer = hwgwTimestamp - Date.now()
+        if (startingTimer > 0) ns.print(`START ${ns.tFormat(startingTimer)}`)
     }
 }
 
