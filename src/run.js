@@ -15,10 +15,10 @@ export async function main(ns) {
 
     // GW until max money and min security, then hack via HWGW.
     ns.tprint('GW started.')
-    await gwLoop(ns, target, usable)
+    const gwReturn = await gwLoop(ns, target, usable)
     // killall(ns)
     ns.tprint('GW finished; HWGW started.')
-    await hwgwLoop(ns, target, usable)
+    await hwgwLoop(ns, target, usable, gwReturn.gwEndTimestamp)
 }
 
 /** @param {NS} ns **/
@@ -103,7 +103,6 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         const prevDiff = prevMoneyAvailable - moneyAvailable
 
         // Kill all if it currently goes below the safety money threshold.
-				// Only if GW loop has completed
         if (Date.now() > gwEndTimestamp && moneyAvailable < safetyMoney) {
             ns.run('killall.js')
             throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
