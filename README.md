@@ -26,8 +26,10 @@ Example:
 ```js
 run get-target.js // Get top valuable server.
 run get-target.js 3 // Get top 3 valuable servers.
-run get-target.js 3 true // Get top 4 valuable servers, also taking into account the times (the results may be different from the above).
+run get-target.js 3 true // Get top 3 valuable servers, taking into account the timing (the results may be different from the above).
 ```
+
+Currently, the `run.js` script is only designed to target one server at a time - since if it goes below the safety money threshold, it will `run killall.js`, killing all other instances. Therefore, it is better to target the most valuable server.
 
 ### Adjust Settings
 
