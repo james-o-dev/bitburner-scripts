@@ -16,7 +16,7 @@ export async function main(ns) {
     // GW until max money and min security, then hack via HWGW.
     ns.tprint('GW started.')
     await gwLoop(ns, target, usable)
-    killall(ns)
+    // killall(ns)
     ns.tprint('GW finished; HWGW started.')
     await hwgwLoop(ns, target, usable)
 }
@@ -24,38 +24,46 @@ export async function main(ns) {
 /** @param {NS} ns **/
 const gwLoop = async (ns, target, usable) => {
 
+    const moneyAvailable = ns.getServerMoneyAvailable(target.name)
+    const securityLevel = ns.getServerSecurityLevel(target.name)
+
+		const reqThreads = {}
+    reqThreads[SCRIPT.GROW] = getReqGrowThreads(target, ns, moneyAvailable)
+    reqThreads[SCRIPT.WEAKEN] = getReqWeakenThreads(target, securityLevel + ns.growthAnalyzeSecurity(reqThreads[SCRIPT.GROW]))
+
+		// Timestamp when the GW loop ends.
+		// The HWGW should not check the money safet threshold until after this timestamp.
+		let gwEndTimestamp = 0
+
     let poll = 0
     while (true) {
         await ns.sleep(poll)
         poll = SETTINGS.POLL
 
-        const moneyAvailable = ns.getServerMoneyAvailable(target.name)
-        const securityLevel = ns.getServerSecurityLevel(target.name)
-
-        if (securityLevel <= target.minSecurityLevel && moneyAvailable === target.maxMoney) break
+        if (reqThreads[SCRIPT.GROW] <= 0 && reqThreads[SCRIPT.WEAKEN] <= 0) return { gwEndTimestamp }
 
         let exec = []
-        if (moneyAvailable < target.maxMoney) {
+        if (reqThreads[SCRIPT.GROW] > 0) {
             exec.push({
                 script: SCRIPT.GROW,
                 scriptRam: getScriptRam(SCRIPT.GROW),
                 scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name),
-                threads: getReqGrowThreads(target, ns, moneyAvailable)
+                threads: reqThreads[SCRIPT.GROW]
             })
         }
-        if (securityLevel > target.minSecurityLevel) {
+        if (reqThreads[SCRIPT.WEAKEN] > 0) {
             exec.push({
                 script: SCRIPT.WEAKEN,
                 scriptRam: getScriptRam(SCRIPT.WEAKEN),
                 scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name),
-                threads: getReqWeakenThreads(target, securityLevel),
+                threads: reqThreads[SCRIPT.WEAKEN],
             })
         }
 
         const polls = getPolls(exec.map(e => e.scriptTime))
 
         exec = exec.map((e, i) => {
-            e.poll = polls[i]
+            e.poll = polls[i] + SETTINGS.POLL
             return e
         })
 
@@ -67,7 +75,10 @@ const gwLoop = async (ns, target, usable) => {
 
                 if (threads > 0) {
                     ns.exec(queued.script, server.name, threads, target.name, queued.poll, Math.random())
-                    queued.threads -= threads
+                    reqThreads[queued.script] -= threads
+
+										const endingTimestamp = Date.now() + queued.poll
+										if (endingTimestamp > gwEndTimestamp) gwEndTimestamp = endingTimestamp
                 }
             }
         }
@@ -79,7 +90,7 @@ const gwLoop = async (ns, target, usable) => {
 }
 
 /** @param {NS} ns **/
-const hwgwLoop = async (ns, target, usable) => {
+const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
     const safetyMoney = target.maxMoney * SETTINGS.MONEY_SAFETY_THRESH
 
     let initialHackThreads = 0
@@ -92,7 +103,8 @@ const hwgwLoop = async (ns, target, usable) => {
         const prevDiff = prevMoneyAvailable - moneyAvailable
 
         // Kill all if it currently goes below the safety money threshold.
-        if (moneyAvailable < safetyMoney) {
+				// Only if GW loop has completed
+        if (Date.now() > gwEndTimestamp && moneyAvailable < safetyMoney) {
             ns.run('killall.js')
             throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
         }
@@ -240,7 +252,7 @@ const printStatus = (ns, target) => {
 }
 
 const getPolls = (polls) => {
-		const scriptInterval = SETTINGS.POLL / polls.length // One batch to fit within a poll.
+    const scriptInterval = SETTINGS.POLL / polls.length // One batch to fit within a poll.
     const maxPoll = polls.reduce((m, p) => m < p ? p : m, 0)
     return polls.map((p, i) => maxPoll - p + (i * scriptInterval))
 }
