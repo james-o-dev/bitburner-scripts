@@ -90,7 +90,7 @@ export const getScriptRam = (script) => {
 
 /** @param {NS} ns **/
 export const getScriptTime = (ns, script, server) => {
-    const hasFormulas = ns.fileExists('Formulas.exe')
+    const hasFormulas = hasFormulasExe(ns)
     let playerObj = null
     let serverObj = null
 
@@ -113,3 +113,6 @@ export const getScriptTime = (ns, script, server) => {
             return ns.getWeakenTime(server)
     }
 }
+
+/** @param {NS} ns **/
+export const hasFormulasExe = (ns) => ns.fileExists('Formulas.exe')
