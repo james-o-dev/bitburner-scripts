@@ -91,6 +91,8 @@ To be investigated - but for now, you can try increase `MONEY_THRESH` (higher, i
 
 Note however that this will reduce your profit.
 
+Also, make sure there are no other scripts targeting the target server, before `run run.js`.
+
 ## Tips
 
 * My personal priority:
