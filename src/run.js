@@ -9,7 +9,7 @@ export async function main(ns) {
     target = target[0]
     if (!target) throw new Error('Please specify the target server name as the argument.')
 
-    if (SETTINGS.MONEY_SAFETY_TRESH >= SETTINGS.MONEY_THRESH) throw new Error('MONEY_SAFETY_TRESH must be below MONEY_THRESH.')
+    if (SETTINGS.MONEY_SAFETY_THRESH >= SETTINGS.MONEY_THRESH) throw new Error('MONEY_SAFETY_THRESH must be below MONEY_THRESH.')
 
     const usable = getServers(ns).filter(s => s.hasRootAccess && s.maxRam > 0).sort((a, b) => b.maxRam - a.maxRam)
 
@@ -80,7 +80,7 @@ const gwLoop = async (ns, target, usable) => {
 
 /** @param {NS} ns **/
 const hwgwLoop = async (ns, target, usable) => {
-    const safetyMoney = target.maxMoney * SETTINGS.MONEY_SAFETY_TRESH
+    const safetyMoney = target.maxMoney * SETTINGS.MONEY_SAFETY_THRESH
 
     let initialHackThreads = 0
     let prevMoneyAvailable = 0
@@ -93,13 +93,13 @@ const hwgwLoop = async (ns, target, usable) => {
         // Kill all if it currently goes below the safety money threshold.
         if (moneyAvailable < safetyMoney) {
             ns.run('killall.js')
-            throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_TRESH} money threshold.`)
+            throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
         }
 
         // Difference between the money available previously and the money now.
         // If +ve, it is increasing - should hack more / grow less.
         // If -ve, it is decreasing - should hack less / grow more (but we do not, only cap until the initial hack/growth threads).
-				// Note: Only effective if the `MONEY_SAFETY_TRESH` setting is not too low
+        // Note: Only effective if the `MONEY_SAFETY_THRESH` setting is not too low
         const prevDiff = prevMoneyAvailable - moneyAvailable
         // Increase the growth threads, decrease hack threads if the available money is going down.
         let hgRecoverRate = 1
