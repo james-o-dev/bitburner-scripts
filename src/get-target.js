@@ -4,9 +4,14 @@ import { GAME_CONSTANTS, getServers, stringify } from 'shared.js'
 export async function main(ns) {
     // ns.disableLog('ALL')
 
+		const excludeTargets = [
+			'n00dles'
+		]
+
     // Get the profitable server, based on the above metric.
     const target = getServers(ns)
         .filter(t => {
+						if (excludeTargets.includes(t.name)) return false
             if (t.maxMoney <= 0) return false
             if (!t.hasRootAccess) return false
             if (t.name === GAME_CONSTANTS.HOME) return false
