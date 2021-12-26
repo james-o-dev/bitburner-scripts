@@ -16,6 +16,19 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 
 ## Usage
 
+### Acquiring target server
+
+`run get-target.js [n] [t]` returns the top profitable server/s to hack, based on metric specified in the script
+
+Where `[n]` is the number of top servers to return and if `[t]` is true/truthy, include timing in the equation (mainly go get servers for testing purposes).
+
+Example:
+```js
+run get-target.js // Get top valuable server.
+run get-target.js 3 // Get top 3 valuable servers.
+run get-target.js 3 true // Get top 4 valuable servers, also taking into account the times (the results may be different from the above).
+```
+
 ### Adjust Settings
 
 * Edit the `SETTINGS` const in `shared.js`
@@ -24,7 +37,7 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 export const SETTINGS = {
     /**
      * Override to reserve ram at home
-		 * By default, reserve total ram of `run.js` + `killall.js`
+     * By default, reserve total ram of `run.js` + `killall.js`
      */
     HOME_RESERVED_RAM: null,
     /**
@@ -41,15 +54,15 @@ export const SETTINGS = {
     MONEY_SAFETY_THRESH: 0.9 / 2,
     /**
      * Duration of polling, in milliseconds.
-		 * Increase polling rate for stability (may avoid batches becoming out of sync and taking more money than it should).
-		 * - Also increase to keep ram usage lower and keep under 100 threads per server
-		 * Decrease for max profitz.
-		 *
-		 * Thoughts: Polling depends on the HGW time of the server
-		 * If the HGW is high, this should be increased (since more batches will accumulate on the servers before the scripts are run and cleared)
-		 * If the HGW is low, this can be decreased (less batches accumulated before the scripts run)
+     * Increase polling rate for stability (may avoid batches becoming out of sync and taking more money than it should).
+     * - Also increase to keep ram usage lower and keep under 100 threads per server
+     * Decrease for max profitz.
+     *
+     * Thoughts: Polling depends on the HGW time of the server
+     * If the HGW is high, this should be increased (since more batches will accumulate on the servers before the scripts are run and cleared)
+     * If the HGW is low, this can be decreased (less batches accumulated before the scripts run)
      */
-		 POLL: 3000,
+    POLL: 4000,
     /**
      * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
      */
