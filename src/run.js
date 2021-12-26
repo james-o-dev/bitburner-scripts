@@ -230,6 +230,7 @@ const printStatus = (ns, target) => {
 }
 
 const getPollDifferences = (polls) => {
+		const eachPoll = SETTINGS.POLL / polls.length // One batch to fit within a poll.
     const maxPoll = polls.reduce((m, p) => m < p ? p : m, 0)
-    return polls.map((p, i) => maxPoll - p + (i * SETTINGS.POLL))
+    return polls.map((p, i) => maxPoll - p + (i * eachPoll))
 }
