@@ -105,10 +105,10 @@ const hwgwLoop = async (ns, target, usable) => {
         if (prevMoneyAvailable && prevDiff < 0) hgRate += Math.abs(prevDiff / moneyAvailable)
 
         const hwgw = [
-            { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), threads: 0 },
-            { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), threads: 0 },
-            { script: SCRIPT.GROW, scriptRam: getScriptRam(SCRIPT.GROW), scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name), threads: 0 },
-            { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), threads: 0 }
+            { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), },
+            { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), },
+            { script: SCRIPT.GROW, scriptRam: getScriptRam(SCRIPT.GROW), scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name), },
+            { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), }
         ]
 
         // Determine polling.

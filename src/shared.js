@@ -1,7 +1,7 @@
 export const SETTINGS = {
     /**
      * Override to reserve ram at home
-		 * By default, reserve total ram of `run.js` + `killall.js`
+     * By default, reserve total ram of `run.js` + `killall.js`
      */
     HOME_RESERVED_RAM: null,
     /**
@@ -18,15 +18,15 @@ export const SETTINGS = {
     MONEY_SAFETY_TRESH: 0.75 / 2,
     /**
      * Duration of polling, in milliseconds.
-		 * Increase polling rate for stability (may avoid batches becoming out of sync and taking more money than it should).
-		 * - Also increase to keep ram usage lower and keep under 100 threads per server
-		 * Decrease for max profitz.
-		 *
-		 * Thoughts: Polling depends on the HGW time of the server
-		 * If the HGW is high, this should be increased (since more batches will accumulate on the servers before the scripts are run and cleared)
-		 * If the HGW is low, this can be decreased (less batches accumulated before the scripts run)
+     * Increase polling rate for stability (may avoid batches becoming out of sync and taking more money than it should).
+     * - Also increase to keep ram usage lower and keep under 100 threads per server
+     * Decrease for max profitz.
+     *
+     * Thoughts: Polling depends on the HGW time of the server
+     * If the HGW is high, this should be increased (since more batches will accumulate on the servers before the scripts are run and cleared)
+     * If the HGW is low, this can be decreased (less batches accumulated before the scripts run)
      */
-		 POLL: 3000,
+    POLL: 3000,
     /**
      * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
      */
@@ -36,7 +36,7 @@ export const SETTINGS = {
 export const SCRIPT = {
     GROW: 'grow.js',
     HACK: 'hack.js',
-		KILLALL: 'killall.js',
+    KILLALL: 'killall.js',
     RUN: 'run.js',
     SHARED: 'shared.js',
     WEAKEN: 'weaken.js',
@@ -90,14 +90,26 @@ export const getScriptRam = (script) => {
 
 /** @param {NS} ns **/
 export const getScriptTime = (ns, script, server) => {
+    const hasFormulas = ns.fileExists('Formulas.exe')
+    let playerObj = null
+    let serverObj = null
+
+    if (hasFormulas) {
+        playerObj = ns.getPlayer()
+        serverObj = ns.getServer(server)
+    }
+
     switch (script) {
         case SCRIPT.GROW:
+            if (hasFormulas) return ns.formulas.hacking.growTime(serverObj, playerObj)
             return ns.getGrowTime(server)
 
         case SCRIPT.HACK:
+            if (hasFormulas) return ns.formulas.hacking.hackTime(serverObj, playerObj)
             return ns.getHackTime(server)
 
         case SCRIPT.WEAKEN:
+            if (hasFormulas) return ns.formulas.hacking.weakenTime(serverObj, playerObj)
             return ns.getWeakenTime(server)
     }
 }
