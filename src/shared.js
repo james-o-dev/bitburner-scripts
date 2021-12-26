@@ -103,3 +103,5 @@ export const getScriptTime = (ns, script, server) => {
 
 /** @param {NS} ns **/
 export const hasFormulasExe = (ns) => ns.fileExists('Formulas.exe')
+
+export const timestampToTimeString = (timestamp) => new Date(timestamp).toLocaleTimeString()
