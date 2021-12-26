@@ -93,6 +93,8 @@ Note however that this will reduce your profit.
 
 Also, make sure there are no other scripts targeting the target server, before `run run.js`.
 
+Also note, `run.js` is currently a WIP and is not designed to run for extended durations.
+
 ## Tips
 
 * My personal priority:
