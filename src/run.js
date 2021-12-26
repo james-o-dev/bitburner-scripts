@@ -1,4 +1,4 @@
-import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, SCRIPT, SETTINGS, stringify } from 'shared.js'
+import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, killall, SCRIPT, SETTINGS, stringify } from 'shared.js'
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -16,6 +16,7 @@ export async function main(ns) {
     // GW until max money and min security, then hack via HWGW.
     ns.tprint('GW started.')
     await gwLoop(ns, target, usable)
+		killall(ns)
     ns.tprint('GW finished; HWGW started.')
     await hwgwLoop(ns, target, usable)
 }
@@ -47,7 +48,7 @@ const gwLoop = async (ns, target, usable) => {
                 script: SCRIPT.WEAKEN,
                 scriptRam: getScriptRam(SCRIPT.WEAKEN),
                 scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name),
-                threads: getReqWeakenThreads(target, target),
+                threads: getReqWeakenThreads(target, securityLevel),
             })
         }
 
@@ -101,8 +102,9 @@ const hwgwLoop = async (ns, target, usable) => {
 				// Note: Only effective if the `MONEY_SAFETY_TRESH` setting is not too low
         const prevDiff = prevMoneyAvailable - moneyAvailable
         // Increase the growth threads, decrease hack threads if the available money is going down.
-        let hgRate = 1
-        if (prevMoneyAvailable && prevDiff < 0) hgRate += Math.abs(prevDiff / moneyAvailable)
+        let hgRecoverRate = 1
+        // if (prevMoneyAvailable && prevDiff < 0) hgRate += Math.abs(prevDiff / moneyAvailable) // Does not work as well...
+        if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate = 2 // Temp increase in order to recover.
 
         const hwgw = [
             { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), },
@@ -124,12 +126,12 @@ const hwgwLoop = async (ns, target, usable) => {
             if (!initialHackThreads) initialHackThreads = h0Threads
             else if (h0Threads > initialHackThreads) h0Threads = initialHackThreads
             // If the available money is somehow going down, reduce hack threads to recover.
-            h0Threads = Math.floor(h0Threads / hgRate)
+            h0Threads = Math.floor(h0Threads / hgRecoverRate)
 
             const w1Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.hackAnalyzeSecurity(h0Threads))
             let g2Threads = getReqGrowThreads(target, ns, target.maxMoney * moneyThresh)
             // If the available money is somehow going down, increase growth threads to recover.
-            g2Threads = Math.ceil(g2Threads * hgRate)
+            g2Threads = Math.ceil(g2Threads * hgRecoverRate)
 
             const w3Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.growthAnalyzeSecurity(g2Threads))
 
