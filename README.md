@@ -55,7 +55,6 @@ export const SETTINGS = {
     /**
      * Duration of polling, in milliseconds.
      * Increase polling rate for stability (may avoid batches becoming out of sync and taking more money than it should).
-     * - Also increase to keep ram usage lower and keep under 100 threads per server
      * Decrease for max profitz.
      *
      * Thoughts: Polling depends on the HGW time of the server
@@ -99,15 +98,12 @@ Note however that this will reduce your profit.
 	* `buy` the Deeplink programs as you can afford it.
 	* `buy` QoL programs if you want.
 	* Join factions and purchase augments needed.
-	* Upgrade home ram (up, until you feel you no longer need it any more - or when you go over 100 processes on the home server).
+	* Upgrade home ram when you can afford it
 	* Upgrade home cpu (may not be necessary?).
 		* Buy additional servers to use, if you need more ram and you currently can not afford upgrading home ram.
 		* Use `purchase-servers.js` to a single server with the largest amount of ram you can afford.
 	* `buy` Formula.exe
 	* Once augments get too expensive, install augments and start again.
-* Try and keep below 100 running scripts per server (there might be a game technical reason for it?).
-	* Increase the `SETTINGS.POLL` to decrease the maximum running scripts, at the expense of profit.
-
 
 ## To Do
 

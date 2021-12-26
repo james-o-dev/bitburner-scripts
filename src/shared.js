@@ -19,7 +19,6 @@ export const SETTINGS = {
     /**
      * Duration of polling, in milliseconds.
      * Increase polling rate for stability (may avoid batches becoming out of sync and taking more money than it should).
-     * - Also increase to keep ram usage lower and keep under 100 threads per server
      * Decrease for max profitz.
      *
      * Thoughts: Polling depends on the HGW time of the server
