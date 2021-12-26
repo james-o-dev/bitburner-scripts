@@ -24,28 +24,33 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 ```js
 export const SETTINGS = {
     /**
-     * Reserve ram at home
-		 * Minimum to run `run.js` + `killall.js`
-		 *
-		 * Override if needed to increase free ram.
+     * Override to reserve ram at home
+		 * By default, reserve total ram of `run.js` + `killall.js`
      */
-    HOME_RESERVED_RAM: 5.45 + 2.25,
+    HOME_RESERVED_RAM: null,
     /**
      * Percentage of the max server money to stay above; Will not take money if below this percentage.
      * Increase: If you do not have enough threads, for a full WGWH.
      * Decrease: If you have threads to spare.
      */
-    MONEY_THRESH: 0.9,
+    MONEY_THRESH: 0.75,
     /**
      * If the money gets below this threshold WHILE the script is running, it will terminate.
      * Note: Only check while the run script is running - it does not accomodate changes that will happen after already existing scripts.
      * 0 = disabled
      */
-    MONEY_SAFETY_TRESH: 0.5,
+    MONEY_SAFETY_TRESH: 0.75 / 2,
     /**
      * Duration of polling, in milliseconds.
+		 * Increase polling rate for stability (may avoid batches becoming out of sync and taking more money than it should).
+		 * - Also increase to keep ram usage lower and keep under 100 threads per server
+		 * Decrease for max profitz.
+		 *
+		 * Thoughts: Polling depends on the HGW time of the server
+		 * If the HGW is high, this should be increased (since more batches will accumulate on the servers before the scripts are run and cleared)
+		 * If the HGW is low, this can be decreased (less batches accumulated before the scripts run)
      */
-    POLL: 1000,
+		 POLL: 3000,
     /**
      * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
      */
