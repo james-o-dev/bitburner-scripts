@@ -89,6 +89,7 @@ const hwgwLoop = async (ns, target, usable) => {
         await ns.sleep(SETTINGS.POLL)
 
         const moneyAvailable = ns.getServerMoneyAvailable(target.name)
+        const prevDiff = prevMoneyAvailable - moneyAvailable
 
         // Kill all if it currently goes below the safety money threshold.
         if (moneyAvailable < safetyMoney) {
@@ -100,11 +101,12 @@ const hwgwLoop = async (ns, target, usable) => {
         // If +ve, it is increasing - should hack more / grow less.
         // If -ve, it is decreasing - should hack less / grow more (but we do not, only cap until the initial hack/growth threads).
         // Note: Only effective if the `MONEY_SAFETY_THRESH` setting is not too low
-        const prevDiff = prevMoneyAvailable - moneyAvailable
         // Increase the growth threads, decrease hack threads if the available money is going down.
         let hgRecoverRate = 1
-        if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate += Math.abs(prevDiff / moneyAvailable) // Does not work as well...
-        // if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate = 2 // Temp increase in order to recover.
+
+        if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate = prevMoneyAvailable / moneyAvailable // Ratio to return `moneyAvailable` to `prevMoneyAvailable`
+        // if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate = 2 // Basic double increase in order to recover.
+        // if (prevMoneyAvailable && prevDiff < 0) hgRecoverRate += Math.abs(prevDiff / moneyAvailable) // ...
 
         const hwgw = [
             { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), },
