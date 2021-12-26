@@ -82,7 +82,8 @@ const hwgwLoop = async (ns, target, usable) => {
     const safetyMoney = target.maxMoney * SETTINGS.MONEY_SAFETY_TRESH
 
     let initialHackThreads = 0
-    let cycleEndTimestamp = 0
+    let prevMoneyAvailable = 0
+
     while (true) {
         await ns.sleep(SETTINGS.POLL)
 
@@ -94,6 +95,14 @@ const hwgwLoop = async (ns, target, usable) => {
             throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_TRESH} money threshold.`)
         }
 
+        // Difference between the money available previously and the money now.
+        // If +ve, it is increasing - should hack more / grow less.
+        // If -ve, it is decreasing - should hack less / grow more.
+        const prevDiff = prevMoneyAvailable - moneyAvailable
+        // Increase the growth threads, decrease hack threads if available money is going down
+        let recovery = 1
+        if (prevDiff < 0) recovery = 2
+
         const hwgw = [
             { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), threads: 0 },
             { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), threads: 0 },
@@ -103,18 +112,24 @@ const hwgwLoop = async (ns, target, usable) => {
 
         // Determine polling.
         const polls = getPollDifferences(hwgw.map(h => h.scriptTime))
-				polls[polls.length - 1] += SETTINGS.POLL
+        polls[polls.length - 1] += SETTINGS.POLL
 
         // First determine the money threshold so that all our servers can currently accomodate an entire batch.
         let moneyThresh = SETTINGS.MONEY_THRESH
         let exec = []
         while (moneyThresh < 1 && exec.length === 0) {
             let h0Threads = getReqHackThreads(target, moneyThresh, ns)
-						if (!initialHackThreads) initialHackThreads = h0Threads
-						else if (h0Threads > initialHackThreads) h0Threads = initialHackThreads
+            // Do not go above the initial hack thread count.
+            if (!initialHackThreads) initialHackThreads = h0Threads
+            else if (h0Threads > initialHackThreads) h0Threads = initialHackThreads
+            // If the available money is somehow going down, reduce hack threads to recover.
+            h0Threads = Math.floor(h0Threads / recovery)
 
             const w1Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.hackAnalyzeSecurity(h0Threads))
-            const g2Threads = getReqGrowThreads(target, ns, target.maxMoney * moneyThresh)
+            let g2Threads = getReqGrowThreads(target, ns, target.maxMoney * moneyThresh)
+            // If the available money is somehow going down, increase growth threads to recover.
+            g2Threads = Math.ceil(g2Threads * recovery)
+
             const w3Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.growthAnalyzeSecurity(g2Threads))
 
             const reqThreads = [h0Threads, w1Threads, g2Threads, w3Threads]
@@ -153,9 +168,11 @@ const hwgwLoop = async (ns, target, usable) => {
         // Then execute them on the servers
         if (exec.length > 0) {
             for (const queued of exec) {
-								ns.exec(queued.script, queued.server, queued.threads, queued.target, queued.poll, Math.random())
+                ns.exec(queued.script, queued.server, queued.threads, queued.target, queued.poll, Math.random())
             }
         }
+
+        prevMoneyAvailable = moneyAvailable
 
         ns.clearLog()
         ns.print('HWGW')
