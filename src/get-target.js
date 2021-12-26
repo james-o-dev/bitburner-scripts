@@ -18,8 +18,9 @@ export async function main(ns) {
         .map(t => {
             let value = t.maxMoney * ns.hackAnalyzeChance(t.name)
             // value =  value * t.serverGrowth
-            // value = value / (t.minSecurityLevel * ns.getHackingLevel())
-            // value = value / (ns.getGrowTime(t.name) + ns.getHackTime(t.name) + ns.getWeakenTime(t.name))
+            value = value / t.minSecurityLevel
+						// Uncomment below if you are testing and do not want to wait a long time for the scripts to start.
+            // value = value / (ns.getGrowTime(t.name) + ns.getHackTime(t.name) + ns.getWeakenTime(t.name)) // For testing
 
             t.value = value
             return t
