@@ -82,6 +82,14 @@ Run `run start.js` again.
 
 Necessary if you have purchased new servers or port-opening tools.
 
+## FAQ
+
+### The scripts become out of sync!
+
+To be investigated - but for now, you can try increase `MONEY_THRESH` (higher, in order to allow more time for the "recovery" function to kick in) and `POLL` (try to be at least 4000) settings.
+
+Note however that this will reduce your profit.
+
 ## Tips
 
 * My personal priority:
@@ -99,6 +107,7 @@ Necessary if you have purchased new servers or port-opening tools.
 	* Once augments get too expensive, install augments and start again.
 * Try and keep below 100 running scripts per server (there might be a game technical reason for it?).
 	* Increase the `SETTINGS.POLL` to decrease the maximum running scripts, at the expense of profit.
+
 
 ## To Do
 
