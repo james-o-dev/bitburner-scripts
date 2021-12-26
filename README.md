@@ -104,12 +104,18 @@ Also note, `run.js` is currently a WIP and is not designed to run for extended d
 	* `buy` the Deeplink programs as you can afford it.
 	* `buy` QoL programs if you want.
 	* Join factions and purchase augments needed.
+		* Firstly prioritize augments that increase faction and then company rates, since those are the main bottlenecks early on.
+		* Next, get tje augment that eliminates the penalty for not focusing on repuation (from Tian Di Hui?).
+		* Next, prioritize hacking.
+		* Next, prioritize QoL augments that give you a leg up after installing augments.
+		* After, buy any of the other combat mods.
+		* When joining one of the city factions, it is better to get all the augments - to avoid having to revisit them in another augment install (since you can only join one city faction at a time)
 	* Upgrade home ram when you can afford it
 	* Upgrade home cpu (may not be necessary?).
 		* Buy additional servers to use, if you need more ram and you currently can not afford upgrading home ram.
 		* Use `purchase-servers.js` to a single server with the largest amount of ram you can afford.
 	* `buy` Formula.exe
-	* Once augments get too expensive, install augments and start again.
+	* Once augments get too expensive, buy up the infinite stat augments to use all the money, install augments and start again.
 
 ## To Do
 
