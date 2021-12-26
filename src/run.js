@@ -97,11 +97,12 @@ const hwgwLoop = async (ns, target, usable) => {
 
         // Difference between the money available previously and the money now.
         // If +ve, it is increasing - should hack more / grow less.
-        // If -ve, it is decreasing - should hack less / grow more.
+        // If -ve, it is decreasing - should hack less / grow more (but we do not, only cap until the initial hack/growth threads).
+				// Note: Only effective if the `MONEY_SAFETY_TRESH` setting is not too low
         const prevDiff = prevMoneyAvailable - moneyAvailable
-        // Increase the growth threads, decrease hack threads if available money is going down
-        let recovery = 1
-        if (prevDiff < 0) recovery = 2
+        // Increase the growth threads, decrease hack threads if the available money is going down.
+        let hgRate = 1
+        if (prevMoneyAvailable && prevDiff < 0) hgRate += Math.abs(prevDiff / moneyAvailable)
 
         const hwgw = [
             { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), threads: 0 },
@@ -123,12 +124,12 @@ const hwgwLoop = async (ns, target, usable) => {
             if (!initialHackThreads) initialHackThreads = h0Threads
             else if (h0Threads > initialHackThreads) h0Threads = initialHackThreads
             // If the available money is somehow going down, reduce hack threads to recover.
-            h0Threads = Math.floor(h0Threads / recovery)
+            h0Threads = Math.floor(h0Threads / hgRate)
 
             const w1Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.hackAnalyzeSecurity(h0Threads))
             let g2Threads = getReqGrowThreads(target, ns, target.maxMoney * moneyThresh)
             // If the available money is somehow going down, increase growth threads to recover.
-            g2Threads = Math.ceil(g2Threads * recovery)
+            g2Threads = Math.ceil(g2Threads * hgRate)
 
             const w3Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.growthAnalyzeSecurity(g2Threads))
 
