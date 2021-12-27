@@ -29,7 +29,7 @@ run get-target.js 3 // Get top 3 valuable servers.
 run get-target.js 3 true // Get top 3 valuable servers, taking into account the timing (the results may be different from the above).
 ```
 
-Currently, the `run.js` script is only designed to target one server at a time - since if it goes below the safety money threshold, it will `run killall.js`, killing all other instances. Therefore, it is better to target the most valuable server.
+Currently, the `run.js` script is only designed to target one server at a time; Therefore, it is better to target the most valuable server.
 
 ### Adjust Settings
 
@@ -82,6 +82,11 @@ This kills all running scripts on all servers, including home.
 Run `run start.js` again.
 
 Necessary if you have purchased new servers or port-opening tools.
+
+### Recovering a server.
+
+If you would like to only bring a server max money and min security and not to hack it, use the `--grow` flag for `run.js`.
+E.g. `run run.js n00dles --grow`.
 
 ## FAQ
 
