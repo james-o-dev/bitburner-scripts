@@ -138,12 +138,12 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
             if (!initialHackThreads) initialHackThreads = h0Threads
             else if (h0Threads > initialHackThreads) h0Threads = initialHackThreads
             // If the available money is somehow going down, reduce hack threads to recover.
-            h0Threads = Math.floor(h0Threads / hgRecoverRate)
+            // h0Threads = Math.floor(h0Threads / hgRecoverRate)
 
             const w1Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.hackAnalyzeSecurity(h0Threads))
             let g2Threads = getReqGrowThreads(target, ns, target.maxMoney * moneyThresh)
             // If the available money is somehow going down, increase growth threads to recover.
-            g2Threads = Math.ceil(g2Threads * hgRecoverRate)
+            // g2Threads = Math.ceil(g2Threads * hgRecoverRate)
 
             const w3Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.growthAnalyzeSecurity(g2Threads))
 
