@@ -3,7 +3,11 @@ import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, killall, SCRIP
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL')
-    ns.tail('run.js', GAME_CONSTANTS.HOME, ns.args[0])
+    ns.tail('run.js', GAME_CONSTANTS.HOME, ...ns.args)
+
+    const flags = ns.flags([
+        ['grow', false]
+    ])
 
     let target = getServers(ns).filter(s => s.name === ns.args[0])
     target = target[0]
@@ -17,6 +21,10 @@ export async function main(ns) {
     ns.tprint('GW started.')
     const gwReturn = await gwLoop(ns, target, usable)
     // killall(ns)
+    if (flags.grow) {
+        ns.tprint('Stopped: Only grow.')
+        return
+    }
     ns.tprint('GW finished; HWGW started.')
     await hwgwLoop(ns, target, usable, gwReturn.gwEndTimestamp)
 }
