@@ -103,6 +103,12 @@ Make sure there are no other scripts targeting the target server, before `run ru
 
 Note, `run.js` is currently a WIP and is not designed to run for extended durations.
 
+## Issues
+
+* The HWGW batch scripts eventually get out of sync. Methods have been used to alleviate this but it comes at the expense of profit - eventually the profit is quite low...
+  * To be investigated - could possibly be due to other running scripts with lower sleep times having priority (javascript stuff).
+* Sometmes HWGW only execs grow and weaken scripts and not the hack script - you to monitor it in active scripts restart `run.js` in order to solve it.
+
 ## Tips
 
 * My personal priority:
@@ -113,7 +119,7 @@ Note, `run.js` is currently a WIP and is not designed to run for extended durati
 	* `buy` QoL programs if you want.
 	* Join factions and purchase augments needed.
 		* Firstly prioritize augments that increase faction and then company rates, since those are the main bottlenecks early on.
-		* Next, get tje augment that eliminates the penalty for not focusing on repuation (from Tian Di Hui?).
+		* Next, get the augment that eliminates the penalty for not focusing on repuation (from Tian Di Hui?).
 		* Next, prioritize hacking.
 		* Next, prioritize QoL augments that give you a leg up after installing augments.
 		* After, buy any of the other combat mods.
@@ -127,6 +133,6 @@ Note, `run.js` is currently a WIP and is not designed to run for extended durati
 
 ## To Do
 
-* HWGW sometimes becomes out of sync (taking below the money safety threshold) and exits... :(
+* Investigate and resolve issues.
 * Comments and descriptions.
 * Investigate improving server target value/priority formula.
