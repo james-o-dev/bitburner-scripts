@@ -1,12 +1,11 @@
-import { getQueue, PORT, setQueue } from 'shared.js'
-
 /** @param {NS} ns **/
 export async function main(ns) {
-	const [ target, pid ] = ns.args
+	const [ target, poll ] = ns.args
+
+	if (poll) {
+		ns.print(`${new Date(Date.now() + poll).toLocaleString()} (${ns.tFormat(poll)})`)
+		await ns.sleep(poll)
+	}
 
 	await ns.weaken(target)
-
-	// Remove from running.
-	const running = getQueue(ns, PORT.QUEUE_RUNNING).filter(f => f.pid !== pid)
-	await setQueue(ns, PORT.QUEUE_RUNNING, running)
 }
