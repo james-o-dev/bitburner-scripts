@@ -8,9 +8,6 @@ export const SETTINGS = {
      * Percentage of the max server money to stay above; Will not take money if below this percentage.
      * Increase: If you do not have enough threads, for a full WGWH.
      * Decrease: If you have threads to spare.
-     *
-     * Note that decreasing the money threshold, although taking more money at a time, will also increase the security level and therefore the execute time.
-     * This can cause syncing issues.
      */
     MONEY_THRESH: 0.9,
     /**

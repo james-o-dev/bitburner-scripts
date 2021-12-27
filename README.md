@@ -46,9 +46,6 @@ export const SETTINGS = {
      * Percentage of the max server money to stay above; Will not take money if below this percentage.
      * Increase: If you do not have enough threads, for a full WGWH.
      * Decrease: If you have threads to spare.
-     *
-     * Note that decreasing the money threshold, although taking more money at a time, will also increase the security level and therefore the execute time.
-     * This can cause syncing issues.
      */
     MONEY_THRESH: 0.9,
     /**
@@ -93,7 +90,6 @@ Necessary if you have purchased new servers or port-opening tools.
 To be investigated - but for now, you can try to...
 * Increase `MONEY_THRESH`.
 	* In order to allow more time for the "recovery" function to kick in.
-	* Minimize changes to security level and therefore changes to the poll timings.
 * Increase `POLL` rate setting.
 
 Note however that this will reduce your profit.
