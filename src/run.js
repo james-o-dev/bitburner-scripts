@@ -163,7 +163,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
                             server: server.name,
                             threads,
                             target: target.name,
-                            poll: polls[i] + SETTINGS.POLL
+                            poll: polls[i] + SETTINGS.POLL + (SETTINGS.POLL / polls.length) // Extra, to delay the batch from the previous.
                         })
                         reqThreads[i] -= threads
                     }
