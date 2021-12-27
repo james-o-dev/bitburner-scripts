@@ -108,15 +108,24 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
     let initialHackThreads = 0
     let hwgwTimestamp = gwEndTimestamp
 
+    let runningHacks = []
+
     while (true) {
         await ns.sleep(SETTINGS.POLL)
+
+        // Remove already elapsed hacks.
+        runningHacks = runningHacks.filter(f => f.timestamp >= Date.now())
 
         const moneyAvailable = ns.getServerMoneyAvailable(target.name)
 
         // Kill all if it currently goes below the safety money threshold.
         if (Date.now() > gwEndTimestamp && moneyAvailable < safetyMoney) {
-            ns.run('killall.js')
-            throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
+            // ns.run('killall.js')
+            // throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
+
+            killHackScripts(ns, runningHacks)
+            ns.tprint(`STOPPED: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
+            return
         }
 
         const hwgw = [
@@ -183,10 +192,19 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         // Then execute them on the servers
         if (exec.length > 0) {
             for (const queued of exec) {
-                ns.exec(queued.script, queued.server, queued.threads, queued.target, queued.poll, Math.random())
+                const args = [queued.target, queued.poll, Math.random()]
+                ns.exec(queued.script, queued.server, queued.threads, ...args)
 
                 const scriptEndTimestamp = Date.now() + queued.scriptTime + queued.poll
                 if (!hwgwTimestamp) hwgwTimestamp = scriptEndTimestamp
+
+                if (queued.script === SCRIPT.HACK) {
+                    runningHacks.push({
+                        timestamp: scriptEndTimestamp,
+                        server: queued.server,
+                        args,
+                    })
+                }
             }
 
             // const timestamps = exec
@@ -202,6 +220,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         printStatus(ns, target)
         const startingTimer = hwgwTimestamp - Date.now()
         if (startingTimer > 0) ns.print(`START ${ns.tFormat(startingTimer)}`)
+				ns.print(`RUNNING ${runningHacks.length}`)
     }
 }
 
@@ -258,3 +277,5 @@ const getPolls = (polls) => {
     const maxPoll = polls.reduce((m, p) => m < p ? p : m, 0)
     return polls.map((p, i) => maxPoll - p + (i * scriptInterval))
 }
+
+const killHackScripts = (ns, runningHacks) => runningHacks.map((rh) => ns.kill(SCRIPT.HACK, rh.server, ...rh.args))
