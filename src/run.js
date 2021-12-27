@@ -115,17 +115,32 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
 
         // Remove already elapsed hacks.
         runningHacks = runningHacks.filter(f => f.timestamp >= Date.now())
+        // Must remove any out of sync hacks (Grow and Weaken can stay).
+				runningHacks = removeOutOfSyncHacks(ns, runningHacks)
 
         const moneyAvailable = ns.getServerMoneyAvailable(target.name)
 
         // Kill all if it currently goes below the safety money threshold.
         if (Date.now() > gwEndTimestamp && moneyAvailable < safetyMoney) {
+						// // Kill everything and throw an error.
             // ns.run('killall.js')
             // throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
 
-            killHackScripts(ns, runningHacks)
-            ns.tprint(`STOPPED: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
-            return
+						// // Kill all hack scripts and stop this script
+            // killHackScripts(ns, runningHacks)
+            // ns.tprint(`WARNING: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
+            // return
+
+            // Remove the next N hacks and continue.
+            ns.tprint(`WARNING: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
+            const hacksToRemove = 1
+            for (let i = 0; i < hacksToRemove; i++) {
+                const hackToRemove = runningHacks.shift()
+                if (hackToRemove) {
+                    const removed = ns.kill(SCRIPT.HACK, hackToRemove.server, ...hackToRemove.args)
+                    if (removed) ns.tprint('A hack was removed in order to recover.')
+                }
+            }
         }
 
         const hwgw = [
@@ -220,7 +235,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         printStatus(ns, target)
         const startingTimer = hwgwTimestamp - Date.now()
         if (startingTimer > 0) ns.print(`START ${ns.tFormat(startingTimer)}`)
-				ns.print(`RUNNING ${runningHacks.length}`)
+        ns.print(`HACKS QUEUED ${runningHacks.length}`)
     }
 }
 
@@ -278,4 +293,26 @@ const getPolls = (polls) => {
     return polls.map((p, i) => maxPoll - p + (i * scriptInterval))
 }
 
-const killHackScripts = (ns, runningHacks) => runningHacks.map((rh) => ns.kill(SCRIPT.HACK, rh.server, ...rh.args))
+/** @param {NS} ns **/
+const removeOutOfSyncHacks = (ns, runningHacks) => {
+	const synced = []
+
+	let removedNum = 0
+	for (let i = 0; i < runningHacks.length; i++) {
+		const element = runningHacks[i]
+		const previous = runningHacks[i - 1]
+		if (previous && element.timestamp <= previous.timestamp) {
+			ns.kill(SCRIPT.HACK, element.server, ...element.args)
+			removedNum++
+			continue
+		}
+		synced.push(element)
+	}
+
+	if (removedNum) ns.tprint(`WARNING: ${removedNum} hack/s were out of sync and were removed.`)
+
+	return synced
+}
+
+/** @param {NS} ns **/
+// const killHackScripts = (ns, runningHacks) => runningHacks.map((rh) => ns.kill(SCRIPT.HACK, rh.server, ...rh.args))
