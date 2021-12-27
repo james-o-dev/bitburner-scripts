@@ -46,12 +46,15 @@ export const SETTINGS = {
      * Percentage of the max server money to stay above; Will not take money if below this percentage.
      * Increase: If you do not have enough threads, for a full WGWH.
      * Decrease: If you have threads to spare.
+     *
+     * Note that decreasing the money threshold, although taking more money at a time, will also increase the security level and therefore the execute time.
+     * This can cause syncing issues.
      */
     MONEY_THRESH: 0.9,
     /**
      * If the money gets below this threshold WHILE the script is running, it will terminate.
      * Note: Only check while the run script is running - it does not accomodate changes that will happen after already existing scripts.
-     * 0 = disabled
+     * 0 = disabled (NOT RECOMMENDED)
      */
     MONEY_SAFETY_THRESH: 0.9 / 2,
     /**
@@ -85,15 +88,19 @@ Necessary if you have purchased new servers or port-opening tools.
 
 ## FAQ
 
-### The scripts become out of sync!
+### The HWGW scripts become out of sync!
 
-To be investigated - but for now, you can try increase `MONEY_THRESH` (higher, in order to allow more time for the "recovery" function to kick in) and `POLL` (try to be at least 4000) settings.
+To be investigated - but for now, you can try to...
+* Increase `MONEY_THRESH`.
+	* In order to allow more time for the "recovery" function to kick in.
+	* Minimize changes to security level and therefore changes to the poll timings.
+* Increase `POLL` rate setting.
 
 Note however that this will reduce your profit.
 
-Also, make sure there are no other scripts targeting the target server, before `run run.js`.
+Make sure there are no other scripts targeting the target server, before `run run.js`.
 
-Also note, `run.js` is currently a WIP and is not designed to run for extended durations.
+Note, `run.js` is currently a WIP and is not designed to run for extended durations.
 
 ## Tips
 
