@@ -1,4 +1,4 @@
-import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, killall, SCRIPT, SETTINGS, stringify } from 'shared.js'
+import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, hasFormulasExe, SCRIPT, SETTINGS, stringify, updatePlayerExp } from 'shared.js'
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -9,35 +9,51 @@ export async function main(ns) {
         ['grow', false]
     ])
 
+    let serverObj = null
+    let playerObj = null
+
     let target = getServers(ns).filter(s => s.name === ns.args[0])
     target = target[0]
     if (!target) throw new Error('Please specify the target server name as the argument.')
 
     if (SETTINGS.MONEY_SAFETY_THRESH >= SETTINGS.MONEY_THRESH) throw new Error('MONEY_SAFETY_THRESH must be below MONEY_THRESH.')
 
+    if (hasFormulasExe(ns)) {
+        serverObj = ns.getServer(target.name)
+        playerObj = ns.getPlayer()
+    }
+
     const usable = getServers(ns).filter(s => s.hasRootAccess && s.maxRam > 0).sort((a, b) => b.maxRam - a.maxRam)
 
     // GW until max money and min security, then hack via HWGW.
     ns.tprint('GW started.')
-    const gwReturn = await gwLoop(ns, target, usable)
+    const gwReturn = await gwLoop(ns, target, usable, serverObj, playerObj)
+    serverObj = gwReturn.serverObj
+    playerObj = gwReturn.playerObj
     // killall(ns)
+
     if (flags.grow) {
         ns.tprint('Stopped: Only grow.')
         return
     }
+
+    if (serverObj) {
+        serverObj.moneyAvailable = serverObj.moneyMax
+        serverObj.hackDifficulty = serverObj.minDifficulty
+    }
     ns.tprint('GW finished; HWGW started.')
-    await hwgwLoop(ns, target, usable, gwReturn.gwEndTimestamp)
+    await hwgwLoop(ns, target, usable, gwReturn.gwEndTimestamp, serverObj, playerObj)
 }
 
 /** @param {NS} ns **/
-const gwLoop = async (ns, target, usable) => {
+const gwLoop = async (ns, target, usable, serverObj, playerObj) => {
 
     const moneyAvailable = ns.getServerMoneyAvailable(target.name)
     const securityLevel = ns.getServerSecurityLevel(target.name)
 
     const reqThreads = {}
-    reqThreads[SCRIPT.GROW] = getReqGrowThreads(target, ns, moneyAvailable)
-    reqThreads[SCRIPT.WEAKEN] = getReqWeakenThreads(target, securityLevel + ns.growthAnalyzeSecurity(reqThreads[SCRIPT.GROW]))
+    reqThreads[SCRIPT.GROW] = getReqGrowThreads(target, moneyAvailable, ns)
+    reqThreads[SCRIPT.WEAKEN] = getReqWeakenThreads(target, securityLevel + ns.growthAnalyzeSecurity(reqThreads[SCRIPT.GROW]), serverObj, playerObj)
 
     // Timestamp when the GW loop ends.
     // The HWGW should not check the money safety threshold until after this timestamp.
@@ -49,14 +65,14 @@ const gwLoop = async (ns, target, usable) => {
         await ns.sleep(poll)
         poll = SETTINGS.POLL
 
-        if (reqThreads[SCRIPT.GROW] <= 0 && reqThreads[SCRIPT.WEAKEN] <= 0) return { gwEndTimestamp }
+        if (reqThreads[SCRIPT.GROW] <= 0 && reqThreads[SCRIPT.WEAKEN] <= 0) return { gwEndTimestamp, serverObj, playerObj, }
 
         let exec = []
         if (reqThreads[SCRIPT.GROW] > 0) {
             exec.push({
                 script: SCRIPT.GROW,
                 scriptRam: getScriptRam(SCRIPT.GROW),
-                scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name),
+                scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name, serverObj, playerObj),
                 threads: reqThreads[SCRIPT.GROW]
             })
         }
@@ -64,7 +80,7 @@ const gwLoop = async (ns, target, usable) => {
             exec.push({
                 script: SCRIPT.WEAKEN,
                 scriptRam: getScriptRam(SCRIPT.WEAKEN),
-                scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name),
+                scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name, serverObj, playerObj),
                 threads: reqThreads[SCRIPT.WEAKEN],
             })
         }
@@ -84,6 +100,7 @@ const gwLoop = async (ns, target, usable) => {
 
                 if (threads > 0) {
                     ns.exec(queued.script, server.name, threads, target.name, queued.poll, Math.random())
+                    playerObj = updatePlayerExp(ns, serverObj, playerObj, threads)
                     reqThreads[queued.script] -= threads
 
                     const scriptEndTimestamp = Date.now() + queued.scriptTime + queued.poll
@@ -102,7 +119,7 @@ const gwLoop = async (ns, target, usable) => {
 }
 
 /** @param {NS} ns **/
-const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
+const hwgwLoop = async (ns, target, usable, gwEndTimestamp, serverObj, playerObj) => {
     const safetyMoney = target.maxMoney * SETTINGS.MONEY_SAFETY_THRESH
 
     let initialHackThreads = 0
@@ -120,10 +137,10 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         }
 
         const hwgw = [
-            { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), },
-            { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), },
-            { script: SCRIPT.GROW, scriptRam: getScriptRam(SCRIPT.GROW), scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name), },
-            { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), }
+            { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name, serverObj, playerObj), },
+            { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name, serverObj, playerObj), },
+            { script: SCRIPT.GROW, scriptRam: getScriptRam(SCRIPT.GROW), scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name, serverObj, playerObj), },
+            { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name, serverObj, playerObj), }
         ]
 
         // Determine polling.
@@ -133,7 +150,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         let moneyThresh = SETTINGS.MONEY_THRESH
         let exec = []
         while (moneyThresh < 1 && exec.length === 0) {
-            let h0Threads = getReqHackThreads(target, moneyThresh, ns)
+            let h0Threads = getReqHackThreads(target, moneyThresh, ns, serverObj, playerObj)
             // Do not go above the initial hack thread count.
             if (!initialHackThreads) initialHackThreads = h0Threads
             else if (h0Threads > initialHackThreads) h0Threads = initialHackThreads
@@ -141,7 +158,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
             // h0Threads = Math.floor(h0Threads / hgRecoverRate)
 
             const w1Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.hackAnalyzeSecurity(h0Threads))
-            let g2Threads = getReqGrowThreads(target, ns, target.maxMoney * moneyThresh)
+            let g2Threads = getReqGrowThreads(target, target.maxMoney * moneyThresh, ns)
             // If the available money is somehow going down, increase growth threads to recover.
             // g2Threads = Math.ceil(g2Threads * hgRecoverRate)
 
@@ -184,6 +201,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         if (exec.length > 0) {
             for (const queued of exec) {
                 ns.exec(queued.script, queued.server, queued.threads, queued.target, queued.poll, Math.random())
+                playerObj = updatePlayerExp(ns, serverObj, playerObj, queued.threads)
 
                 const scriptEndTimestamp = Date.now() + queued.scriptTime + queued.poll
                 if (!hwgwTimestamp) hwgwTimestamp = scriptEndTimestamp
@@ -206,7 +224,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
 }
 
 /** @param {NS} ns **/
-const getReqGrowThreads = (target, ns, moneyAvailable) => {
+const getReqGrowThreads = (target, moneyAvailable, ns) => {
     const growDiffPct = target.maxMoney / moneyAvailable
     return Math.ceil(ns.growthAnalyze(target.name, growDiffPct))
 }
@@ -219,12 +237,19 @@ const getReqGrowThreads = (target, ns, moneyAvailable) => {
  * @param {NS} ns
  * @returns
  */
-const getReqHackThreads = (target, moneyThresh, ns) => {
+const getReqHackThreads = (target, moneyThresh, ns, serverObj, playerObj) => {
+    if (serverObj && playerObj) {
+        const pctToHack = 1 - moneyThresh
+        const oneThread = ns.formulas.hacking.hackPercent(serverObj, playerObj)
+        return Math.floor(pctToHack / oneThread)
+    }
+
     const moneyMinimum = target.maxMoney * moneyThresh
     const hackDiff = target.maxMoney - moneyMinimum
     return Math.floor(ns.hackAnalyzeThreads(target.name, hackDiff))
 }
 
+/** @param {NS} ns **/
 const getReqWeakenThreads = (target, securityLevel) => {
     const weakenDiff = securityLevel - target.minSecurityLevel
     return Math.ceil(weakenDiff / GAME_CONSTANTS.WEAKEN_THREAD_ANALYZE)

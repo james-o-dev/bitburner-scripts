@@ -91,15 +91,18 @@ export const getScriptRam = (script) => {
 }
 
 /** @param {NS} ns **/
-export const getScriptTime = (ns, script, server) => {
+export const getScriptTime = (ns, script, server, serverObject, playerObj) => {
     switch (script) {
         case SCRIPT.GROW:
+            if (serverObject && playerObj) return ns.formulas.hacking.growTime(serverObject, playerObj)
             return ns.getGrowTime(server)
 
         case SCRIPT.HACK:
+            if (serverObject && playerObj) return ns.formulas.hacking.hackTime(serverObject, playerObj)
             return ns.getHackTime(server)
 
         case SCRIPT.WEAKEN:
+            if (serverObject && playerObj) return ns.formulas.hacking.weakenTime(serverObject, playerObj)
             return ns.getWeakenTime(server)
     }
 }
@@ -108,3 +111,14 @@ export const getScriptTime = (ns, script, server) => {
 export const hasFormulasExe = (ns) => ns.fileExists('Formulas.exe')
 
 export const timestampToTimeString = (timestamp) => new Date(timestamp).toLocaleTimeString()
+
+/** @param {NS} ns **/
+export const updatePlayerExp = (ns, serverObject, playerObject, threads) => {
+	if (!hasFormulasExe(ns) || !serverObject || !playerObject) return
+
+    const oneThreadExp = ns.formulas.hacking.hackExp(serverObject, playerObject)
+
+    const exp = oneThreadExp * threads
+    playerObject.hacking_exp += exp
+		return playerObject
+}
