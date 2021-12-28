@@ -1,5 +1,8 @@
 import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, SCRIPT, SETTINGS, stringify } from 'shared.js'
 
+// Set this to true to print warnings to the terminal.
+const PRINT_TERMINAL_WARNINGS = false
+
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog('ALL')
@@ -40,7 +43,7 @@ const gwLoop = async (ns, target, usable) => {
     // Timestamp when the GW loop ends.
     // The HWGW should not do the "recovery" process until after this timestamp.
     let gwEndTimestamp = 0
-		// For logging timer until start.
+    // For logging timer until start.
     let gwStartTimestamp = 0
 
     let poll = 0
@@ -120,16 +123,16 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         const moneyAvailable = ns.getServerMoneyAvailable(target.name)
 
         // "Recovery" process.
-				// To recover from out-of-sync
+        // To recover from out-of-sync
         if (Date.now() > gwEndTimestamp && moneyAvailable < minMoney) {
             // Remove the next N hacks and continue.
-            ns.tprint(`WARNING: Went below ${SETTINGS.MONEY_THRESH} money threshold.`)
+            if (PRINT_TERMINAL_WARNINGS) ns.tprint(`WARNING: Went below ${SETTINGS.MONEY_THRESH} money threshold.`)
             const hacksToRemove = 2
             for (let i = 0; i < hacksToRemove; i++) {
                 const hackToRemove = runningHacks.shift()
                 if (hackToRemove) {
                     const killed = ns.kill(hackToRemove.pid, hackToRemove.server, ...hackToRemove.args)
-                    if (killed) ns.tprint('A hack was removed in order to recover.')
+                    if (PRINT_TERMINAL_WARNINGS && killed) ns.tprint('A hack was removed in order to recover.')
                 }
             }
         }
@@ -207,7 +210,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
 
                     if (queued.script === SCRIPT.HACK) {
                         runningHacks.push({
-														pid,
+                            pid,
                             timestamp: scriptEndTimestamp,
                             server: queued.server,
                             args,
@@ -297,22 +300,24 @@ const removeOutOfSyncHacks = (ns, runningHacks) => {
 
     // Remove elements via "Stalin sort".
 
-    let removedNum = 0
+    let nextHackExpected = 0 // Next hack expected to be at or after this timestamp.
     for (let i = 0; i < runningHacks.length; i++) {
         const element = runningHacks[i]
-        const next = runningHacks[i + 1]
-        if (next && element.timestamp >= next.timestamp) {
-            const killed = ns.kill(element.pid, element.server, ...element.args)
-						if (killed) {
-							removedNum++
-							continue
-						}
-        } else {
-					synced.push(element)
-				}
-    }
 
-    if (removedNum) ns.tprint(`WARNING: ${removedNum} hack/s were out of sync and were removed.`)
+        // Hack script somehow snuck in between the poll setting.
+        if (nextHackExpected && element.timestamp < nextHackExpected) {
+            const killed = ns.kill(element.pid, element.server, ...element.args)
+            if (killed) {
+                if (PRINT_TERMINAL_WARNINGS) ns.tprint('WARNING: Killed an out-of-sync hack.')
+                continue
+            }
+        }
+				// The next in-sync hack.
+				else {
+            nextHackExpected = element.timestamp + SETTINGS.POLL
+            synced.push(element)
+        }
+    }
 
     return synced
 }
