@@ -92,7 +92,7 @@ E.g. `run run.js n00dles --grow`.
 
 ### Early Game
 
-When you have just started out (or you have destroyed a BitNode) you will not have enough RAM to `run run.js`.
+When you have just started (before destroying the first BitNode) you will not have enough RAM to `run run.js`.
 
 Instead, use `run early-run.js [target]`; Overall it is less RAM-efficient, but the main script is small enough to fit in your starting RAM.
 
@@ -182,7 +182,7 @@ Note that `run.js` is currently a WIP and is not designed to run for extended du
 		* Use `purchase-servers.js` to a single server with the largest amount of ram you can afford.
 	* `buy` Formula.exe
 	* Once augments get too expensive, buy up the infinite stat augments to use all the money, install augments and start again.
-	* Get rep for factions, complete milestones and fl1ght.exe, destroy BitNodes etc (personally have not done it yet).
+	* Get rep for factions, complete milestones and fl1ght.exe, destroy BitNodes and repeat...
 * In the beginning, you can level up hacking for free at the university.
 
 ## To Do
