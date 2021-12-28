@@ -251,9 +251,7 @@ const getReqGrowThreads = (target, ns, moneyAvailable) => {
  * @returns
  */
 const getReqHackThreads = (target, moneyThresh, ns) => {
-    const moneyMinimum = target.maxMoney * moneyThresh
-    const hackDiff = target.maxMoney - moneyMinimum
-    return Math.floor(ns.hackAnalyzeThreads(target.name, hackDiff))
+    return Math.floor((1 - moneyThresh) / ns.hackAnalyze(target.name))
 }
 
 const getReqWeakenThreads = (target, securityLevel) => {
@@ -321,6 +319,3 @@ const removeOutOfSyncHacks = (ns, runningHacks) => {
 
     return synced
 }
-
-/** @param {NS} ns **/
-// const killHackScripts = (ns, runningHacks) => runningHacks.map((rh) => ns.kill(SCRIPT.HACK, rh.server, ...rh.args))
