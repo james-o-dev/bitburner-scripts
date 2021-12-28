@@ -4,13 +4,14 @@ import { SETTINGS } from 'shared.js'
 export async function main(ns) {
     const [target] = ns.args
 
-    // const moneyThresh = ns.getServerMaxMoney(target) * SETTINGS.MONEY_THRESH
+    const moneyThresh = ns.getServerMaxMoney(target) * SETTINGS.MONEY_THRESH
+    const securityThresh = ns.getServerMinSecurityLevel(target) * SETTINGS.SECURITY_THRESH
 
     while (true) {
-        if (ns.getServerSecurityLevel(target) > ns.getServerMinSecurityLevel(target)) {
+        if (ns.getServerSecurityLevel(target) > securityThresh) {
             // If the server's security level is above our threshold, weaken it
             await ns.weaken(target)
-        } else if (ns.getServerMoneyAvailable(target) < ns.getServerMaxMoney(target)) {
+        } else if (ns.getServerMoneyAvailable(target) < moneyThresh) {
             // If the server's money is less than our threshold, grow it
             await ns.grow(target)
         } else {

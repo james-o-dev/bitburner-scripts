@@ -37,6 +37,12 @@ Currently, the `run.js` script is only designed to target one server at a time; 
 
 ```js
 export const SETTINGS = {
+		/**
+		 * Should weaken until below this security level, before attempting to hack.
+		 *
+		 * Note: Only applicable to early game scripts (the HWGW will always weaken to the min security).
+		 */
+		SECURITY_THRESH: 5,
     /**
      * Override to reserve ram at home
      * By default, reserve total ram of `run.js` + `killall.js`
