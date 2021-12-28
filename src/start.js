@@ -81,6 +81,7 @@ const getServerDetails = (ns, name, { reserveRam = 0 } = {}) => {
 /** @param {NS} ns **/
 const copyScripts = async (ns, server) => {
 	const files = [
+		SCRIPT.EARLY_SCRIPT,
 		SCRIPT.GROW,
 		SCRIPT.HACK,
 		SCRIPT.SHARED,

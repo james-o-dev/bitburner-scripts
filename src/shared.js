@@ -29,6 +29,7 @@ export const SETTINGS = {
 }
 
 export const SCRIPT = {
+    EARLY_SCRIPT: 'early-script.js',
     GROW: 'grow.js',
     HACK: 'hack.js',
     KILLALL: 'killall.js',
@@ -37,6 +38,7 @@ export const SCRIPT = {
     WEAKEN: 'weaken.js',
 }
 export const SCRIPT_RAM = {
+    EARLY_SCRIPT: 2.75,
     GROW: 1.7,
     HACK: 1.7,
     KILLALL: 2.25,
@@ -89,6 +91,8 @@ export const stringify = (obj) => JSON.stringify(obj, null, 2)
 
 export const getScriptRam = (script) => {
     switch (script) {
+        case SCRIPT.EARLY_SCRIPT:
+            return SCRIPT_RAM.EARLY_SCRIPT
         case SCRIPT.GROW:
             return SCRIPT_RAM.GROW
         case SCRIPT.HACK:

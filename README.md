@@ -79,10 +79,18 @@ Run `run start.js` again.
 
 Necessary if you have purchased new servers or port-opening tools.
 
-### Recovering a server.
+### Recovering a server
 
 If you would like to only bring a server max money and min security and not to hack it, use the `--grow` flag for `run.js`.
 E.g. `run run.js n00dles --grow`.
+
+### Early Game
+
+When you have just started out (or you have destroyed a BitNode) you will not have enough RAM to `run run.js`.
+
+Instead, use `run early-run.js [target]`; Overall it is less RAM-efficient, but the main script is small enough to fit in your starting RAM.
+
+Prioritize upgrading the home RAM and using `run.js` instead.
 
 ## Scripts
 
@@ -111,6 +119,14 @@ E.g. `run run.js n00dles --grow`.
 	* Only farm hacking experience, does not do hacking or growing.
 	* arg0: Target to farm; Default 'joesguns'
 	* `--kill`: Only kill the running scripts and ends, do not create any more processes.
+* `early-run.js`
+	* Run script for the very early game, before you have enough ram to do `run run.js`
+	* It is `run.js` but for the early game
+	* RAM-inefficient, upgrade RAM and use `run.js` as soon as possible.
+* `early-script.js`
+	* Early game script, combines Grow, Hack, Weaken.
+	* Mostly copied from the Bitburner tutorial example code, with additions (e.g. target argument, toast).
+	* RAM-inefficient, upgrade RAM and use `run.js` as soon as possible.
 
 ## FAQ
 
@@ -158,6 +174,7 @@ Note that `run.js` is currently a WIP and is not designed to run for extended du
 		* Use `purchase-servers.js` to a single server with the largest amount of ram you can afford.
 	* `buy` Formula.exe
 	* Once augments get too expensive, buy up the infinite stat augments to use all the money, install augments and start again.
+	* Get rep for factions, complete milestones and fl1ght.exe, destroy BitNodes etc (personally have not done it yet).
 
 ## To Do
 
