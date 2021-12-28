@@ -92,6 +92,8 @@ Instead, use `run early-run.js [target]`; Overall it is less RAM-efficient, but 
 
 Prioritize upgrading the home RAM and using `run.js` instead.
 
+WARNING: Do not run the early game scripts at high hacking levels and multipliers, since a single hack will deplete the server to $0 and it can no longer grow! :P (you must connect to the target and grow it manually).
+
 ## Scripts
 
 * `shared.js`
