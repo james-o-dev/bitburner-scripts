@@ -138,8 +138,8 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
             for (let i = 0; i < hacksToRemove; i++) {
                 const hackToRemove = runningHacks.shift()
                 if (hackToRemove) {
-                    const removed = ns.kill(SCRIPT.HACK, hackToRemove.server, ...hackToRemove.args)
-                    if (removed) ns.tprint('A hack was removed in order to recover.')
+                    const killed = ns.kill(hackToRemove.pid, hackToRemove.server, ...hackToRemove.args)
+                    if (killed) ns.tprint('A hack was removed in order to recover.')
                 }
             }
         }
@@ -217,6 +217,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
 
                     if (queued.script === SCRIPT.HACK) {
                         runningHacks.push({
+														pid,
                             timestamp: scriptEndTimestamp,
                             server: queued.server,
                             args,
@@ -311,11 +312,14 @@ const removeOutOfSyncHacks = (ns, runningHacks) => {
         const element = runningHacks[i]
         const next = runningHacks[i + 1]
         if (next && element.timestamp >= next.timestamp) {
-            ns.kill(SCRIPT.HACK, element.server, ...element.args)
-            removedNum++
-            continue
-        }
-        synced.push(element)
+            const killed = ns.kill(element.pid, element.server, ...element.args)
+						if (killed) {
+							removedNum++
+							continue
+						}
+        } else {
+					synced.push(element)
+				}
     }
 
     if (removedNum) ns.tprint(`WARNING: ${removedNum} hack/s were out of sync and were removed.`)
