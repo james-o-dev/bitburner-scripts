@@ -4,9 +4,9 @@ Some scripts for the game [Bitburner](https://store.steampowered.com/app/1812820
 
 ## Summary
 
-* Continuously create "HWGW" (Hack, Weaken, Grow, Weaken) script sequence, targeting only the most profitable server, based on a metric.
+* Continuously create "HWGW" (Hack, Weaken, Grow, Weaken) script sequences, targeting only the most profitable server, based on a metric.
 * Grow, hack, weak scripts are minimal - to allow maximum threads.
-* Calculate polling sleep time-out of each script, such that they all run concurrently but finish in order, inclose sequence with one another.
+* Calculate polling sleep time-out of each script, such that they all run concurrently but finish in order, in close sequence with one another.
 
 ## Getting Started
 
@@ -83,6 +83,34 @@ Necessary if you have purchased new servers or port-opening tools.
 
 If you would like to only bring a server max money and min security and not to hack it, use the `--grow` flag for `run.js`.
 E.g. `run run.js n00dles --grow`.
+
+## Scripts
+
+* `shared.js`
+	* Settings and helper functions, imported in other scripts
+* `start.js`
+	* Gets all servers, nukes and copies needed script files.
+	* Runs `get-target.js` to return a target, for `run.js`
+* `get-target.js`
+	* Returns information of the best server to hack
+	* arg0: Number of servers to return, from the best downwards
+	* arg1: Truthy to take into account script times; For testing (or if you are impatient).
+* `run.js`
+	* Main hacking script/controller.
+	* arg0: Server name.
+	* `--grow`: Only grow and weaken the server - do not continue to hack it.
+* `hack.js`, `grow.js`, `weaken,js`: Files used to HGW;
+	* Copied to other servers with `start.js`
+* `print-server-money-status.js`: Opens the logs and prints the money status of every server.
+	* `--sort-m`, `--sort-a`, `--sort-ap`: Sort list by max money, available money and available money percent, respectively.
+	* `--once`: Only run once, then kills the process; Default the process runs with continuous updates.
+* `purchase-servers.js`: Purchase a single server, with the maximum RAM you can currently afford.
+	* If you have purchased the maximum amount of servers, it will delete attempt to delete an existing one with the least amount of RAM.
+	* `--dry-run`: Do not purchase the server, only print out what it would have purchased.
+* `exp-farm.js`
+	* Only farm hacking experience, does not do hacking or growing.
+	* arg0: Target to farm; Default 'joesguns'
+	* `--kill`: Only kill the running scripts and ends, do not create any more processes.
 
 ## FAQ
 
