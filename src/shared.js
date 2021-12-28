@@ -49,6 +49,16 @@ export const FILES = {
 }
 
 export const GAME_CONSTANTS = {
+    /**
+     * Currently, grow time is WEAKEN_TIME x GROW_TIME_MULTI
+     * - This may change in the future...
+     */
+    GROW_TIME_MULTI: 0.8,
+    /**
+     * Currently, hack time is WEAKEN_TIME x HACK_TIME_MULTI
+     * - This may change in the future...
+     */
+    HACK_TIME_MULTI: 0.25,
     HOME: 'home',
     NULL_PORT: 'NULL PORT DATA',
     WEAKEN_THREAD_ANALYZE: 0.05,
@@ -85,15 +95,17 @@ export const getScriptRam = (script) => {
 
 /** @param {NS} ns **/
 export const getScriptTime = (ns, script, server) => {
+    const weakenTime = ns.getWeakenTime(server)
+
     switch (script) {
         case SCRIPT.GROW:
-            return ns.getGrowTime(server)
+            return weakenTime * GAME_CONSTANTS.GROW_TIME_MULTI
 
         case SCRIPT.HACK:
-            return ns.getHackTime(server)
+            return weakenTime * GAME_CONSTANTS.HACK_TIME_MULTI
 
         case SCRIPT.WEAKEN:
-            return ns.getWeakenTime(server)
+            return weakenTime
     }
 }
 
