@@ -49,12 +49,6 @@ export const SETTINGS = {
      */
     MONEY_THRESH: 0.9,
     /**
-     * If the money gets below this threshold WHILE the script is running, it will terminate.
-     * Note: Only check while the run script is running - it does not accomodate changes that will happen after already existing scripts.
-     * 0 = disabled (NOT RECOMMENDED)
-     */
-    MONEY_SAFETY_THRESH: 0.9 / 2,
-    /**
      * Duration of polling, in milliseconds.
      * Increase polling rate for stability (may avoid batches becoming out of sync and taking more money than it should).
      * Decrease for max profitz.
@@ -99,9 +93,11 @@ To be investigated - but for now, you can try to...
 
 Note however that this will reduce your profit.
 
-Make sure there are no other scripts targeting the target server, before `run run.js`.
+A potential cause could be how Javascript itself queues async threads (Bitrunner is made in React/Chromium). Try killing off other scripts that also do polling, if they are running.
 
-Note, `run.js` is currently a WIP and is not designed to run for extended durations.
+A mechanic has been built into the HWGW scripts in order to automatically recover from out of sync issues. During this time you will have less profit since it removes some running hack scripts.
+
+Note that `run.js` is currently a WIP and is not designed to run for extended durations.
 
 ## Issues
 

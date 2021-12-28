@@ -1,4 +1,4 @@
-import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, killall, SCRIPT, SETTINGS, stringify } from 'shared.js'
+import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, SCRIPT, SETTINGS, stringify } from 'shared.js'
 
 /** @param {NS} ns **/
 export async function main(ns) {
@@ -12,8 +12,6 @@ export async function main(ns) {
     let target = getServers(ns).filter(s => s.name === ns.args[0])
     target = target[0]
     if (!target) throw new Error('Please specify the target server name as the argument.')
-
-    if (SETTINGS.MONEY_SAFETY_THRESH >= SETTINGS.MONEY_THRESH) throw new Error('MONEY_SAFETY_THRESH must be below MONEY_THRESH.')
 
     const usable = getServers(ns).filter(s => s.hasRootAccess && s.maxRam > 0).sort((a, b) => b.maxRam - a.maxRam)
 
@@ -40,8 +38,9 @@ const gwLoop = async (ns, target, usable) => {
     reqThreads[SCRIPT.WEAKEN] = getReqWeakenThreads(target, securityLevel + ns.growthAnalyzeSecurity(reqThreads[SCRIPT.GROW]))
 
     // Timestamp when the GW loop ends.
-    // The HWGW should not check the money safety threshold until after this timestamp.
+    // The HWGW should not do the "recovery" process until after this timestamp.
     let gwEndTimestamp = 0
+		// For logging timer until start.
     let gwStartTimestamp = 0
 
     let poll = 0
@@ -103,7 +102,6 @@ const gwLoop = async (ns, target, usable) => {
 
 /** @param {NS} ns **/
 const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
-    const safetyMoney = target.maxMoney * SETTINGS.MONEY_SAFETY_THRESH
     const minMoney = target.maxMoney * SETTINGS.MONEY_THRESH
 
     let initialHackThreads = 0
@@ -115,23 +113,15 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         await ns.sleep(SETTINGS.POLL)
 
         // Remove already elapsed hacks.
-        runningHacks = runningHacks.filter(f => f.timestamp >= Date.now())
+        runningHacks = runningHacks.filter(f => f.timestamp > Date.now())
         // Must remove any out of sync hacks (Grow and Weaken can stay).
         runningHacks = removeOutOfSyncHacks(ns, runningHacks)
 
         const moneyAvailable = ns.getServerMoneyAvailable(target.name)
 
-        // Kill all if it currently goes below the safety money threshold.
+        // "Recovery" process.
+				// To recover from out-of-sync
         if (Date.now() > gwEndTimestamp && moneyAvailable < minMoney) {
-            // // Kill everything and throw an error.
-            // ns.run('killall.js')
-            // throw new Error(`Stopped: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
-
-            // // Kill all hack scripts and stop this script
-            // killHackScripts(ns, runningHacks)
-            // ns.tprint(`WARNING: Went below ${SETTINGS.MONEY_SAFETY_THRESH} money threshold.`)
-            // return
-
             // Remove the next N hacks and continue.
             ns.tprint(`WARNING: Went below ${SETTINGS.MONEY_THRESH} money threshold.`)
             const hacksToRemove = 2

@@ -11,12 +11,6 @@ export const SETTINGS = {
      */
     MONEY_THRESH: 0.9,
     /**
-     * If the money gets below this threshold WHILE the script is running, it will terminate.
-     * Note: Only check while the run script is running - it does not accomodate changes that will happen after already existing scripts.
-     * 0 = disabled (NOT RECOMMENDED)
-     */
-    MONEY_SAFETY_THRESH: 0.9 / 2,
-    /**
      * Duration of polling, in milliseconds.
      * Increase polling rate for stability (may avoid batches becoming out of sync and taking more money than it should).
      * Decrease for max profitz.
