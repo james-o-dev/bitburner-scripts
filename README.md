@@ -177,6 +177,7 @@ Note that `run.js` is currently a WIP and is not designed to run for extended du
 	* `buy` Formula.exe
 	* Once augments get too expensive, buy up the infinite stat augments to use all the money, install augments and start again.
 	* Get rep for factions, complete milestones and fl1ght.exe, destroy BitNodes etc (personally have not done it yet).
+* In the beginning, you can level up hacking for free at the university.
 
 ## To Do
 
