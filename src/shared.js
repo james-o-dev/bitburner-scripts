@@ -8,6 +8,8 @@ export const SETTINGS = {
      * Percentage of the max server money to stay above; Will not take money if below this percentage.
      * Increase: If you do not have enough threads, for a full WGWH.
      * Decrease: If you have threads to spare.
+     *
+     * Warning: Setting this too low may cause the HWGW script be less efficient, due to the calculation (it has to cancel hack threads to recover).
      */
     MONEY_THRESH: 0.9,
     /**
@@ -105,9 +107,9 @@ export const getUsableServers = (ns) => getServers(ns).filter(s => s.hasRootAcce
 
 /** @param {NS} ns **/
 export const getScriptServerThreads = (ns, server, threadsReq, script) => {
-	if (threadsReq <= 0) return 0
-	const scriptRam = getScriptRam(script)
-	const threadsAvailable = Math.floor((server.maxRam - ns.getServerUsedRam(server.name)) / scriptRam)
-	const threads = threadsAvailable > threadsReq ? threadsReq : threadsAvailable
-	return threads < 0 ? 0 : threads
+    if (threadsReq <= 0) return 0
+    const scriptRam = getScriptRam(script)
+    const threadsAvailable = Math.floor((server.maxRam - ns.getServerUsedRam(server.name)) / scriptRam)
+    const threads = threadsAvailable > threadsReq ? threadsReq : threadsAvailable
+    return threads < 0 ? 0 : threads
 }
