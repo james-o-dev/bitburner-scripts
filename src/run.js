@@ -1,4 +1,4 @@
-import { GAME_CONSTANTS, getScriptServerThreads, getScriptTime, getServers, getUsableServers, SCRIPT, SETTINGS, stringify } from 'shared.js'
+import { GAME_CONSTANTS, getScriptServerThreads, getScriptTime, getServers, getUsableServers, kill, SCRIPT, SETTINGS, stringify } from 'shared.js'
 
 
 // Set this to true to print warnings to the terminal.
@@ -22,7 +22,6 @@ export async function main(ns) {
     // GW until max money and min security, then hack via HWGW.
     ns.tprint('GW started.')
     const gwReturn = await gwLoop(ns, target, usable)
-    // killall(ns)
     if (flags.grow) {
         ns.tprint('Stopped: Only grow.')
         return
@@ -42,7 +41,7 @@ const gwLoop = async (ns, target, usable) => {
     reqThreads[SCRIPT.WEAKEN] = getReqWeakenThreads(target, securityLevel + ns.growthAnalyzeSecurity(reqThreads[SCRIPT.GROW]))
 
     // Timestamp when the GW loop ends.
-    // The HWGW should not do the "recovery" process until after this timestamp.
+    // The HWGW should not do the "recovery" mechanic until after this timestamp.
     let gwEndTimestamp = 0
     // For logging timer until start.
     let gwStartTimestamp = 0
@@ -121,7 +120,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
 
         const moneyAvailable = ns.getServerMoneyAvailable(target.name)
 
-        // "Recovery" process.
+        // "Recovery" mechanic.
         // To recover from out-of-sync
         if (Date.now() > gwEndTimestamp && moneyAvailable < minMoney) {
             // Remove the next N hacks and continue.
@@ -130,7 +129,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
             for (let i = 0; i < hacksToRemove; i++) {
                 const hackToRemove = runningHacks.shift()
                 if (hackToRemove) {
-                    const killed = ns.kill(hackToRemove.pid, hackToRemove.server, ...hackToRemove.args)
+                    const killed = kill(ns, hackToRemove.pid, ...hackToRemove.args)
                     if (PRINT_TERMINAL_WARNINGS && killed) ns.tprint('A hack was removed in order to recover.')
                 }
             }
@@ -154,13 +153,9 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
             // Do not go above the initial hack thread count.
             if (!initialHackThreads) initialHackThreads = h0Threads
             else if (h0Threads > initialHackThreads) h0Threads = initialHackThreads
-            // If the available money is somehow going down, reduce hack threads to recover.
-            // h0Threads = Math.floor(h0Threads / hgRecoverRate)
 
             const w1Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.hackAnalyzeSecurity(h0Threads))
             let g2Threads = getReqGrowThreads(target, ns, target.maxMoney * moneyThresh)
-            // If the available money is somehow going down, increase growth threads to recover.
-            // g2Threads = Math.ceil(g2Threads * hgRecoverRate)
 
             const w3Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.growthAnalyzeSecurity(g2Threads))
 
@@ -292,14 +287,14 @@ const removeOutOfSyncHacks = (ns, runningHacks) => {
 
         // Hack script somehow snuck in between the poll setting.
         if (nextHackExpected && element.timestamp < nextHackExpected) {
-            const killed = ns.kill(element.pid, element.server, ...element.args)
+            const killed = kill(ns, element.pid, ...element.args)
             if (killed) {
                 if (PRINT_TERMINAL_WARNINGS) ns.tprint('WARNING: Killed an out-of-sync hack.')
                 continue
             }
         }
-				// The next in-sync hack.
-				else {
+        // The next in-sync hack.
+        else {
             nextHackExpected = element.timestamp + SETTINGS.POLL
             synced.push(element)
         }

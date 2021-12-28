@@ -78,6 +78,13 @@ export function killall(ns) {
         .forEach(({ name }) => ns.killall(name))
 }
 
+/** @param {NS} ns **/
+export function kill(ns, scriptOrPid, args) {
+    getServers(ns)
+        .filter(s => s.name !== GAME_CONSTANTS.HOME)
+        .forEach(({ name }) => ns.kill(scriptOrPid, name, ...args))
+}
+
 export const stringify = (obj) => JSON.stringify(obj, null, 2)
 
 export const getScriptRam = (script) => {
