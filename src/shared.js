@@ -99,3 +99,15 @@ export const getScriptTime = (ns, script, server) => {
 export const hasFormulasExe = (ns) => ns.fileExists('Formulas.exe')
 
 export const timestampToTimeString = (timestamp) => new Date(timestamp).toLocaleTimeString()
+
+/** @param {NS} ns **/
+export const getUsableServers = (ns) => getServers(ns).filter(s => s.hasRootAccess && s.maxRam > 0).sort((a, b) => b.maxRam - a.maxRam)
+
+/** @param {NS} ns **/
+export const getScriptServerThreads = (ns, server, threadsReq, script) => {
+	if (threadsReq <= 0) return 0
+	const scriptRam = getScriptRam(script)
+	const threadsAvailable = Math.floor((server.maxRam - ns.getServerUsedRam(server.name)) / scriptRam)
+	const threads = threadsAvailable > threadsReq ? threadsReq : threadsAvailable
+	return threads < 0 ? 0 : threads
+}

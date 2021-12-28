@@ -1,4 +1,5 @@
-import { GAME_CONSTANTS, getScriptRam, getScriptTime, getServers, SCRIPT, SETTINGS, stringify } from 'shared.js'
+import { GAME_CONSTANTS, getScriptServerThreads, getScriptTime, getServers, getUsableServers, SCRIPT, SETTINGS, stringify } from 'shared.js'
+
 
 // Set this to true to print warnings to the terminal.
 const PRINT_TERMINAL_WARNINGS = false
@@ -16,7 +17,7 @@ export async function main(ns) {
     target = target[0]
     if (!target) throw new Error('Please specify the target server name as the argument.')
 
-    const usable = getServers(ns).filter(s => s.hasRootAccess && s.maxRam > 0).sort((a, b) => b.maxRam - a.maxRam)
+    const usable = getUsableServers(ns)
 
     // GW until max money and min security, then hack via HWGW.
     ns.tprint('GW started.')
@@ -57,7 +58,6 @@ const gwLoop = async (ns, target, usable) => {
         if (reqThreads[SCRIPT.GROW] > 0) {
             exec.push({
                 script: SCRIPT.GROW,
-                scriptRam: getScriptRam(SCRIPT.GROW),
                 scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name),
                 threads: reqThreads[SCRIPT.GROW]
             })
@@ -65,7 +65,6 @@ const gwLoop = async (ns, target, usable) => {
         if (reqThreads[SCRIPT.WEAKEN] > 0) {
             exec.push({
                 script: SCRIPT.WEAKEN,
-                scriptRam: getScriptRam(SCRIPT.WEAKEN),
                 scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name),
                 threads: reqThreads[SCRIPT.WEAKEN],
             })
@@ -82,7 +81,7 @@ const gwLoop = async (ns, target, usable) => {
             for (const server of usable) {
                 if (queued.threads <= 0) break
 
-                const threads = getScriptServerThreads(ns, server, queued.threads, queued.scriptRam)
+                const threads = getScriptServerThreads(ns, server, queued.threads, queued.script)
 
                 if (threads > 0) {
                     ns.exec(queued.script, server.name, threads, target.name, queued.poll, Math.random())
@@ -138,10 +137,10 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         }
 
         const hwgw = [
-            { script: SCRIPT.HACK, scriptRam: getScriptRam(SCRIPT.HACK), scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), },
-            { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), },
-            { script: SCRIPT.GROW, scriptRam: getScriptRam(SCRIPT.GROW), scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name), },
-            { script: SCRIPT.WEAKEN, scriptRam: getScriptRam(SCRIPT.WEAKEN), scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), }
+            { script: SCRIPT.HACK, scriptTime: getScriptTime(ns, SCRIPT.HACK, target.name), },
+            { script: SCRIPT.WEAKEN, scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), },
+            { script: SCRIPT.GROW, scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name), },
+            { script: SCRIPT.WEAKEN, scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name), }
         ]
 
         // Determine polling.
@@ -173,7 +172,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
                 for (const server of usable) {
                     if (reqThreads[i] <= 0) break
 
-                    const threads = getScriptServerThreads(ns, server, reqThreads[i], script.scriptRam)
+                    const threads = getScriptServerThreads(ns, server, reqThreads[i], script.script)
 
                     if (threads > 0) {
                         workingExec.push({
@@ -257,17 +256,6 @@ const getReqHackThreads = (target, moneyThresh, ns) => {
 const getReqWeakenThreads = (target, securityLevel) => {
     const weakenDiff = securityLevel - target.minSecurityLevel
     return Math.ceil(weakenDiff / GAME_CONSTANTS.WEAKEN_THREAD_ANALYZE)
-}
-
-/** @param {NS} ns **/
-const getScriptServerThreads = (ns, server, threadsReq, scriptRam) => {
-    if (threadsReq <= 0) return 0
-
-    const threadsAvailable = Math.floor((server.maxRam - ns.getServerUsedRam(server.name)) / scriptRam)
-
-    const threads = threadsAvailable > threadsReq ? threadsReq : threadsAvailable
-
-    return threads < 0 ? 0 : threads
 }
 
 /** @param {NS} ns **/
