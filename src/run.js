@@ -126,7 +126,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         if (Date.now() > gwEndTimestamp && moneyAvailable < minMoney) {
             // Remove the next N hacks and continue.
             if (PRINT_TERMINAL_WARNINGS) ns.tprint(`WARNING: Went below ${SETTINGS.MONEY_THRESH} money threshold.`)
-            const hacksToRemove = 2
+            const hacksToRemove = 1
             for (let i = 0; i < hacksToRemove; i++) {
                 const hackToRemove = runningHacks.shift()
                 if (hackToRemove) {
