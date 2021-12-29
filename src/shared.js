@@ -15,7 +15,12 @@ export const SETTINGS = {
      * Increase: If you do not have enough threads, for a full WGWH.
      * Decrease: If you have threads to spare.
      *
-     * Warning: Setting this too low may cause the HWGW script be less efficient, due to the calculation (it has to cancel hack threads to recover).
+     * Setting this too low may cause the HWGW script be less efficient, due to the calculation (it has to cancel hack threads to recover).
+		 *
+		 * Thoughts: You should consider two things when adjusting this setting - a) server weaken time and b) amount of RAM you have.
+		 * Ideally set this to a setting that allows `run.js` to run continuously without having to wait for free ram.
+		 * So if you have less ram or the weaken time is long, you should increase this value.
+		 * Else you reduce it for more profit.
      */
     MONEY_THRESH: 0.9,
     /**
