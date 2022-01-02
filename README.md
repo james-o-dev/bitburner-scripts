@@ -191,6 +191,7 @@ Note that `run.js` is currently a WIP and is not designed to run for extended du
 * In the beginning, you can level up hacking for free at the university.
 * Starting out, when not using `early-run.js` it is better to target a server that has less hacking time, in order to get the ball rolling quicker. Get this target via `run get-target 1 true`.
 	* Also, better to set the `SETTINGS.MONEY_THRESH` to a high value, since weaken times will be long and you will not have access to as much RAM
+* Best faction/argurments to get at the start is Tian Di Hui because of faction/city rep multipliers - travel to Chongqing or New Tokyo.
 
 ## To Do
 
