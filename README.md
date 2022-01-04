@@ -140,6 +140,9 @@ WARNING: Do not run the early game scripts at high hacking levels and multiplier
 	* Early game script, combines Grow, Hack, Weaken.
 	* Mostly copied from the Bitburner tutorial example code, with additions (e.g. target argument, toast).
 	* RAM-inefficient, upgrade RAM and use `run.js` as soon as possible.
+* `find-coding-contracts.js`
+	* Finds and prints out any coding contract files (*.cct) that currently exist in all accessible servers.
+	* Once found, you have to manually connect and solve them.
 
 ## FAQ
 
