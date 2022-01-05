@@ -37,12 +37,12 @@ Currently, the `run.js` script is only designed to target one server at a time; 
 
 ```js
 export const SETTINGS = {
-		/**
-		 * Should weaken until below this security level, before attempting to hack.
-		 *
-		 * Note: Only applicable to early game scripts (the HWGW will always weaken to the min security).
-		 */
-		SECURITY_THRESH: 5,
+    /**
+     * Should weaken until below this security level, before attempting to hack.
+     *
+     * Note: Only applicable to early game scripts (the HWGW will always weaken to the min security).
+     */
+    SECURITY_THRESH: 5,
     /**
      * Override to reserve ram at home
      * By default, reserve total ram of `run.js` + `killall.js`
@@ -54,13 +54,13 @@ export const SETTINGS = {
      * Decrease: If you have threads to spare.
      *
      * Setting this too low may cause the HWGW script be less efficient, due to the calculation (it has to cancel hack threads to recover).
-		 *
-		 * Thoughts: You should consider two things when adjusting this setting - a) server weaken time and b) amount of RAM you have.
-		 * Ideally set this to a setting that allows `run.js` to run continuously without having to wait for free ram.
-		 * So if you have less ram or the weaken time is long, you should increase this value.
-		 * Else you reduce it for more profit.
+     *
+     * Thoughts: You should consider two things when adjusting this setting - a) server weaken time and b) amount of RAM you have.
+     * Ideally set this to a setting that allows `run.js` to run continuously without having to wait for free ram.
+     * So if you have less ram or the weaken time is long, you should increase this value.
+     * Else you reduce it for more profit.
      */
-    MONEY_THRESH: 0.9,
+    MONEY_THRESH: 0.95,
     /**
      * Duration of polling, in milliseconds.
      * Increase polling rate for stability (may avoid batches becoming out of sync and taking more money than it should).
@@ -70,7 +70,7 @@ export const SETTINGS = {
      * If the HGW is high, this should be increased (since more batches will accumulate on the servers before the scripts are run and cleared)
      * If the HGW is low, this can be decreased (less batches accumulated before the scripts run)
      */
-    POLL: 4000,
+    POLL: 1000,
     /**
      * Toast (bottom-right pop-up) duration, in milliseconds - adjust if needed, if it is too slow/fast.
      */
