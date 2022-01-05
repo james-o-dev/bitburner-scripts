@@ -125,7 +125,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
         if (Date.now() > gwEndTimestamp && moneyAvailable < minMoney) {
             // Remove the next N hacks and continue.
             if (PRINT_TERMINAL_WARNINGS) ns.tprint(`WARNING: Went below ${SETTINGS.MONEY_THRESH} money threshold.`)
-            const hacksToRemove = 1
+            const hacksToRemove = 2
             for (let i = 0; i < hacksToRemove; i++) {
                 const hackToRemove = runningHacks.shift()
                 if (hackToRemove) {
@@ -155,8 +155,7 @@ const hwgwLoop = async (ns, target, usable, gwEndTimestamp) => {
             else if (h0Threads > initialHackThreads) h0Threads = initialHackThreads
 
             const w1Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.hackAnalyzeSecurity(h0Threads))
-            let g2Threads = getReqGrowThreads(target, ns, target.maxMoney * moneyThresh)
-
+            const g2Threads = getReqGrowThreads(target, ns, target.maxMoney * moneyThresh)
             const w3Threads = getReqWeakenThreads(target, target.minSecurityLevel + ns.growthAnalyzeSecurity(g2Threads))
 
             const reqThreads = [h0Threads, w1Threads, g2Threads, w3Threads]
