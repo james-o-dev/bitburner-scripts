@@ -52,7 +52,7 @@ export const SCRIPT_RAM = {
     EARLY_SCRIPT: 2.75,
     GROW: 1.7,
     HACK: 1.7,
-    KILLALL: 2.25,
+    KILLALL: 2.45,
     WEAKEN: 1.75,
 }
 
