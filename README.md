@@ -168,6 +168,7 @@ Note that `run.js` is currently a WIP and is not designed to run for extended du
 * Sometmes HWGW only execs grow and weaken scripts and not the hack script
 	* If `HACKS QUEUED` in the `run.js` logs stay at 0 when doing HWGW, you have this problem.
 	* Resolve by `run run.js (target) --grow` and let it the WGW scripts finish, before doing `run run.js (target)`.
+* Does not correctly reserve default home RAM when using `run start.js`. To be investigated.
 
 ## Tips
 
