@@ -19,28 +19,29 @@ export async function main(ns) {
 
     const usable = getUsableServers(ns)
 
-    // GW until max money and min security, then hack via HWGW.
-    ns.tprint('GW started.')
-    const gwReturn = await gwLoop(ns, target, usable)
+    // WGW until max money and min security, then hack via HWGW.
+    ns.tprint('WGW started.')
+    const gwReturn = await wgwLoop(ns, target, usable)
     if (flags.grow) {
         ns.tprint('Stopped: Only grow.')
         return
     }
-    ns.tprint('GW finished; HWGW started.')
+    ns.tprint('WGW finished; HWGW started.')
     await hwgwLoop(ns, target, usable, gwReturn.gwEndTimestamp)
 }
 
 /** @param {NS} ns **/
-const gwLoop = async (ns, target, usable) => {
+const wgwLoop = async (ns, target, usable) => {
 
     const moneyAvailable = ns.getServerMoneyAvailable(target.name)
     const securityLevel = ns.getServerSecurityLevel(target.name)
 
     const reqThreads = {}
-    reqThreads[SCRIPT.GROW] = getReqGrowThreads(target, ns, moneyAvailable)
-    reqThreads[SCRIPT.WEAKEN] = getReqWeakenThreads(target, securityLevel + ns.growthAnalyzeSecurity(reqThreads[SCRIPT.GROW]))
+    reqThreads.w0 = getReqWeakenThreads(target, securityLevel)
+    reqThreads.g1 = getReqGrowThreads(target, ns, moneyAvailable)
+    reqThreads.w2 = getReqWeakenThreads(target, target.minSecurityLevel + ns.growthAnalyzeSecurity(reqThreads.g1))
 
-    // Timestamp when the GW loop ends.
+    // Timestamp when the WGW loop ends.
     // The HWGW should not do the "recovery" mechanic until after this timestamp.
     let gwEndTimestamp = 0
     // For logging timer until start.
@@ -51,21 +52,31 @@ const gwLoop = async (ns, target, usable) => {
         await ns.sleep(poll)
         poll = SETTINGS.POLL
 
-        if (reqThreads[SCRIPT.GROW] <= 0 && reqThreads[SCRIPT.WEAKEN] <= 0) return { gwEndTimestamp }
+        if (reqThreads.w0 <= 0 && reqThreads.g1 <= 0 && reqThreads.w2 <= 0) return { gwEndTimestamp }
 
         let exec = []
-        if (reqThreads[SCRIPT.GROW] > 0) {
+        if (reqThreads.w0 > 0) {
             exec.push({
-                script: SCRIPT.GROW,
-                scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name),
-                threads: reqThreads[SCRIPT.GROW]
-            })
-        }
-        if (reqThreads[SCRIPT.WEAKEN] > 0) {
-            exec.push({
+                id: 'w0',
                 script: SCRIPT.WEAKEN,
                 scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name),
-                threads: reqThreads[SCRIPT.WEAKEN],
+                threads: reqThreads.w0
+            })
+        }
+        if (reqThreads.g1 > 0) {
+            exec.push({
+                id: 'g1',
+                script: SCRIPT.GROW,
+                scriptTime: getScriptTime(ns, SCRIPT.GROW, target.name),
+                threads: reqThreads.g1,
+            })
+        }
+        if (reqThreads.w2 > 0) {
+            exec.push({
+                id: 'w2',
+                script: SCRIPT.WEAKEN,
+                scriptTime: getScriptTime(ns, SCRIPT.WEAKEN, target.name),
+                threads: reqThreads.w2
             })
         }
 
@@ -77,14 +88,17 @@ const gwLoop = async (ns, target, usable) => {
         })
 
         for (const queued of exec) {
-            for (const server of usable) {
-                if (queued.threads <= 0) break
+					if (reqThreads[queued.id] <= 0) continue // No more required threads.
+
+					for (const server of usable) {
+								if (reqThreads[queued.id] <= 0) continue // No more required threads.
+                if (queued.threads <= 0) break // No more free threads.
 
                 const threads = getScriptServerThreads(ns, server, queued.threads, queued.script)
 
                 if (threads > 0) {
                     ns.exec(queued.script, server.name, threads, target.name, queued.poll, Math.random())
-                    reqThreads[queued.script] -= threads
+                    reqThreads[queued.id] -= threads
 
                     const scriptEndTimestamp = Date.now() + queued.scriptTime + queued.poll
                     if (scriptEndTimestamp > gwEndTimestamp) gwEndTimestamp = scriptEndTimestamp
@@ -94,7 +108,7 @@ const gwLoop = async (ns, target, usable) => {
         }
 
         ns.clearLog()
-        ns.print('GW')
+        ns.print('WGW')
         printStatus(ns, target)
         const startingTimer = gwStartTimestamp - Date.now()
         if (startingTimer > 0) ns.print(`START ${ns.tFormat(startingTimer)}`)
